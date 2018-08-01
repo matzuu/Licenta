@@ -1,5 +1,6 @@
 package com.example.bogdan.licenta;
 
+import android.content.Intent;
 import android.database.Cursor;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -27,6 +28,8 @@ public class MainActivity extends AppCompatActivity {
     Button btnRead;
     Button btnWrite;
     Button btnsigStrView;
+    Button btnCountSig;
+    Button btnSensorActivity;
 
 
     @Override
@@ -49,133 +52,41 @@ public class MainActivity extends AppCompatActivity {
         btnRead = (Button) findViewById(R.id.button_read);
         btnWrite = (Button) findViewById(R.id.button_write);
         btnsigStrView = (Button) findViewById(R.id.button_SigStrView);
+        btnCountSig =  (Button) findViewById(R.id.button_CountSig);
+        btnSensorActivity = (Button) findViewById(R.id.button_toSensorActivity);
 
         AddData();
         viewAll();
         UpdateData();
         DeleteData();
-        ReadData();
-        TestData();
+        ReadingThread();
         viewSigStr();
+        CountSig();
+        toSensorActivity();
 
     }
-    public void TestData(){
-        btnWrite.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Log.d("TEEST", "TEEEEEEEEESSSSSSTTT");
 
-                        String toTest ="0.0,1.3,;";
-                        Matcher m;
-                        Double coordx = 1.1;
-                        Double coordy = 2.2;
-
-                        m = Pattern.compile("\\d\\.\\d").matcher(toTest);
-                        if(m.find())
-                            coordx = Double.parseDouble(m.group());
-                        if(m.find())
-                            coordy = Double.parseDouble(m.group());
-                        Log.d("TEEST","coordonata lui x" +coordx.toString()+" coord lui y " + coordy);
-
-                    }
-                }
-        );
-    }
-
-
-
-    public void ReadData(){
+    public void ReadingThread(){
         btnRead.setOnClickListener(
             new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Log.d("READ","Precitire");
-                    List<String> stringList = FileHelper.ReadFile(MainActivity.this);
-                    stringList = FileHelper.CleanString(MainActivity.this,stringList);
+                    Runnable runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d("READ","Precitire");
+                            List<String> stringList = FileHelper.ReadFile(MainActivity.this);
+                            Log.d("READ","Curatare");
+                            stringList = FileHelper.CleanString(stringList);
+                            boolean ok;
+                            ok = FileHelper.parseString(stringList,myDb);
+                            Log.d("READ","FINISH PARSESTRING: "+ ok);
 
+                        }
+                    };
+                    Thread readingThread = new Thread(runnable);
+                    readingThread.start();
                     //
-                    Matcher mPos;
-                    Position pos = new Position();
-                    Double coordx = null;
-                    Double coordy = null;
-                    Matcher mMacAddress;
-                    HashSet<String> macAddressSet = new HashSet<>();
-                    String macAddressAux;
-                    Matcher mSigStr;
-                    HashSet<SignalStr> signalStrHashSet = new HashSet<>();
-                    SignalStr sigStr = new SignalStr();
-                    List<String> auxL = new ArrayList<>();
-                    String aux = "";
-                    Long auxl;
-
-                    Matcher mMacAddressSig;
-
-                    long lastPosID = -2;
-
-                    for (String line : stringList) {
-                        Log.d("CleanString", "\n linia: " + line);
-                        mPos = Pattern.compile("\\d\\.\\d,").matcher(line);
-                        coordx = null;
-                        coordy = null;
-                        if (mPos.find()) {
-                            aux = mPos.group();
-                            aux = aux.substring(0, aux.length() - 1);
-                            Log.d("CleanString", "INCERC COORDX " + aux);
-                            coordx = Double.parseDouble(aux);
-                        }
-
-
-                        if (mPos.find()) {
-                            aux = mPos.group();
-                            aux = aux.substring(0, aux.length() - 1);
-                            coordy = Double.parseDouble(aux);
-                        }
-
-                        //ma asigur ca pe fiecare linie gasesc doua Double de pozitie.. in caz contrar ignor linia;
-                        if (coordx != null && coordy != null) {
-                            if (coordx != pos.CoordX || coordy != pos.CoordY) {
-                                pos.CoordX = coordy;
-                                pos.CoordY = coordy;
-                                pos.Level = 0;
-                                pos.Orientation = 0;
-                                pos.Cluster = "test";
-                                auxl = myDb.insertPosData(pos);
-                                if (auxl >= 0 )
-                                    lastPosID = auxl;
-                            }
-                            //gasesc toate intensitatile de semnal asociate cu o adresa mac
-                            mMacAddressSig = Pattern.compile("\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}=-\\d{2}").matcher(line);
-                            while (mMacAddressSig.find()) {
-                                auxL.add(mMacAddressSig.group());
-                            }
-
-                            for (String s : auxL) {
-                                Log.d("CleanString","Stringul s: "+s);
-                                mMacAddress = Pattern.compile("\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}").matcher(s);
-                                mSigStr = Pattern.compile("-\\d{2}").matcher(s);
-                                if (mMacAddress.find()) {
-                                    macAddressAux = mMacAddress.group();
-                                    macAddressSet.add(macAddressAux);
-                                    Log.d("CleanString","marimea mac: "+macAddressSet.size());
-                                    if (mSigStr.find()) {
-                                        sigStr = new SignalStr();
-                                        sigStr.SignalStrength = Integer.parseInt(mSigStr.group());
-                                        sigStr.Pos_ID = lastPosID;
-                                        sigStr.Router_Address = macAddressAux;
-                                        signalStrHashSet.add(sigStr);
-                                        Log.d("CleanString","marimea signalStrset: "+signalStrHashSet.size());
-                                    }
-                                }
-                            }//end aux for
-                        }
-                    }//end for
-                    Log.d("CleanString","sizeOfmacAddressSet: "+macAddressSet.size()+"sizeOfsignalStrHashSet "+ signalStrHashSet.size());
-                    myDb.insertRouterData(macAddressSet);
-                    myDb.insertSignalStrData(signalStrHashSet);
-
-                    //Pozitie
-                    //Router Sgl Str
 
                 }
             }
@@ -319,6 +230,23 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
+    public void CountSig(){
+        btnCountSig.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        long ret = myDb.getSigCount();
+                        StringBuffer buffer = new StringBuffer();
+                        buffer.append("Count Sig Str : " + ret + " \n");
+
+
+                        // Show all data
+                        showMessage("Count", buffer.toString());
+                    }
+                }
+        );
+    }
+
     public void showMessage(String title, String Message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setCancelable(true);
@@ -327,7 +255,18 @@ public class MainActivity extends AppCompatActivity {
         builder.show();
     }
 
+    private void toSensorActivity(){
 
+        btnSensorActivity.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        startActivity(new Intent(MainActivity.this,SensorActivity.class));
+                    }
+                }
+        );
+
+    }
 
 
 }

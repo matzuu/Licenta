@@ -3,6 +3,7 @@ package com.example.bogdan.licenta;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
@@ -82,12 +83,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         ContentValues contentValues;
         Log.d("INSEERT","macAddressSet size: "+macAddressSet.size());
         long rowID = -2;
+        db.beginTransaction();
         for(String s: macAddressSet){
             contentValues = new ContentValues();
             contentValues.put("MACAddress",s);
             Log.d("INSEERT","In macAddress value \n macAddress: "+s);
             rowID = db.insertWithOnConflict(TABLE_ROUTER,null ,contentValues,CONFLICT_IGNORE);
         }
+        db.setTransactionSuccessful();
+        db.endTransaction();
         //Log.d("INSEERT","NR ContentValues: "+ contentValues.size());
         return rowID;
     }
@@ -97,6 +101,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Log.d("INSEERT","sigStrSet size: "+sigStrSet.size());
         ContentValues contentValues;
         long rowID = -2;
+
+        db.beginTransaction();
         for(SignalStr s: sigStrSet){
             Log.d("INSEERT","In SigStr value \n Pos_ID: "+s.Pos_ID
                     + " \n Router_Address: "+s.Router_Address
@@ -107,6 +113,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             contentValues.put("SignalStrength",s.SignalStrength);
             rowID = db.insertWithOnConflict(TABLE_SIGSTR,null ,contentValues,CONFLICT_IGNORE);
         }
+        db.setTransactionSuccessful();
+        db.endTransaction();
         //Log.d("INSEERT","NR ContentValues: "+ contentValues.size());
 
         return rowID;
@@ -164,6 +172,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor res = db.rawQuery("select * from "+tableName,null);
         return res;
+    }
+
+    public long getSigCount(){
+        return DatabaseUtils.queryNumEntries(this.getWritableDatabase(),TABLE_SIGSTR,null);
     }
 
     //UPDATE

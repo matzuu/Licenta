@@ -259,8 +259,25 @@
         android:layout_width="92dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
         android:text="SigStrVi"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button_write" />
+
+    <Button
+        android:id="@+id/button_CountSig"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CountSig"
+        app:layout_constraintStart_toEndOf="@+id/button_SigStrView"
+        app:layout_constraintTop_toBottomOf="@+id/button_read" />
+
+    <Button
+        android:id="@+id/button_toSensorActivity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="SensorAct"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 </android.support.constraint.ConstraintLayout>
