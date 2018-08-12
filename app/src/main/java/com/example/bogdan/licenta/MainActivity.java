@@ -11,25 +11,18 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
     DatabaseHelper myDb;
-    EditText editCoordX, editCoordY, editLevel, editPosID,editOrientation,editCluster;
-    Button btnAddData;
+
     Button btnviewAll;
-    Button btnDelete;
-    Button btnviewUpdate;
     Button btnRead;
     Button btnWrite;
     Button btnsigStrView;
     Button btnCountSig;
-    Button btnSensorActivity;
+    Button btnRegisterActivity;
+    Button btnLocatingActivity;
 
 
     @Override
@@ -39,30 +32,21 @@ public class MainActivity extends AppCompatActivity {
 
         myDb = new DatabaseHelper(this);
 
-        editCoordX = (EditText) findViewById(R.id.editText_CoordX);
-        editCoordY = (EditText) findViewById(R.id.editText_CoordY);
-        editLevel = (EditText) findViewById(R.id.editText_Level);
-        editOrientation = (EditText) findViewById(R.id.editText_Orientation);
-        editCluster = (EditText) findViewById(R.id.editText_Cluster);
-        editPosID = (EditText) findViewById(R.id.editText_PosID);
-        btnAddData = (Button) findViewById(R.id.button_add);
         btnviewAll = (Button) findViewById(R.id.button_viewAll);
-        btnviewUpdate = (Button) findViewById(R.id.button_update);
-        btnDelete = (Button) findViewById(R.id.button_delete);
         btnRead = (Button) findViewById(R.id.button_read);
         btnWrite = (Button) findViewById(R.id.button_write);
         btnsigStrView = (Button) findViewById(R.id.button_SigStrView);
         btnCountSig =  (Button) findViewById(R.id.button_CountSig);
-        btnSensorActivity = (Button) findViewById(R.id.button_toSensorActivity);
+        btnRegisterActivity = (Button) findViewById(R.id.button_toRegisterActivity);
+        btnLocatingActivity = (Button) findViewById(R.id.button_toLocatingActivity);
 
-        AddData();
+
         viewAll();
-        UpdateData();
-        DeleteData();
         ReadingThread();
         viewSigStr();
         CountSig();
-        toSensorActivity();
+        toRegisterActivity();
+        toLocatingActivity();
 
     }
 
@@ -86,84 +70,8 @@ public class MainActivity extends AppCompatActivity {
                     };
                     Thread readingThread = new Thread(runnable);
                     readingThread.start();
-                    //
-
                 }
             }
-        );
-    }
-
-    public void DeleteData() {
-        btnDelete.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Integer deletedRows = myDb.deleteData(editPosID.getText().toString());
-                        if (deletedRows > 0)
-                            Toast.makeText(MainActivity.this, "Data Deleted", Toast.LENGTH_LONG).show();
-                        else
-                            Toast.makeText(MainActivity.this, "Data not Deleted", Toast.LENGTH_LONG).show();
-                    }
-                }
-        );
-    }
-
-    public void UpdateData() {
-        btnviewUpdate.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        boolean isUpdate = myDb.updateData(editPosID.getText().toString(),
-                                Double.parseDouble(editCoordX.getText().toString()),
-                                Double.parseDouble(editCoordY.getText().toString()),
-                                Integer.parseInt(editLevel.getText().toString()),
-                                Integer.parseInt(editOrientation.getText().toString()),
-                                editCluster.getText().toString()
-                                );
-                        if (isUpdate == true)
-                            Toast.makeText(MainActivity.this, "Data Update", Toast.LENGTH_LONG).show();
-                        else
-                            Toast.makeText(MainActivity.this, "Data not Updated", Toast.LENGTH_LONG).show();
-                    }
-                }
-        );
-    }
-
-    public void AddData() {
-        btnAddData.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Position p = new Position(
-                                Double.parseDouble(editCoordX.getText().toString()),
-                                Double.parseDouble(editCoordY.getText().toString()),
-                                Integer.parseInt(editLevel.getText().toString()),
-                                Integer.parseInt(editOrientation.getText().toString()),
-                                editCluster.getText().toString());
-                        //List<Position> plist = new ArrayList<Position>();
-                        long lastPosID = myDb.insertPosData(p);
-
-                        //------SignalStr
-
-
-                        //------MacAddr
-
-
-                        //boolean isInserted = myDb.insertMultipleData(lastPosID,lsigstr,lmacAddr)
-                        /*
-                        boolean isInserted = myDb.insertPosData(
-                                Integer.parseInt(editCoordX.getText().toString()),
-                                Integer.parseInt(editCoordY.getText().toString()),
-                                Integer.parseInt(editLevel.getText().toString()),
-                                Integer.parseInt(editOrientation.getText().toString()),
-                                editCluster.getText().toString()
-                        );*/
-                        if (lastPosID >= 0)
-                            Toast.makeText(MainActivity.this, "Data Inserted , lastId: "+lastPosID, Toast.LENGTH_LONG).show();
-                        else
-                            Toast.makeText(MainActivity.this, "Data not Inserted", Toast.LENGTH_LONG).show();
-                    }
-                }
         );
     }
 
@@ -219,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
                         //buffer.append("Id :" + res.getString(0) + "\n");
                         buffer.append("ID :" + res.getString(0) + "\n");
                         buffer.append("POS_ID :" + res.getString(1) + "\n");
-                        buffer.append("Router_address :" + res.getString(2) + "\n");
+                        buffer.append("BSSID :" + res.getString(2) + "\n");
                         buffer.append("Signal Str :" + res.getString(3) + "\n\n");
                     }
 
@@ -255,13 +163,26 @@ public class MainActivity extends AppCompatActivity {
         builder.show();
     }
 
-    private void toSensorActivity(){
+    private void toRegisterActivity(){
 
-        btnSensorActivity.setOnClickListener(
+        btnRegisterActivity.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        startActivity(new Intent(MainActivity.this,SensorActivity.class));
+                        startActivity(new Intent(MainActivity.this,RegisterActivity.class));
+                    }
+                }
+        );
+
+    }
+
+    private void toLocatingActivity(){
+
+        btnLocatingActivity.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        startActivity(new Intent(MainActivity.this,LocatingActivity.class));
                     }
                 }
         );

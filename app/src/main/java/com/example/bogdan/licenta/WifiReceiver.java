@@ -3,8 +3,6 @@ package com.example.bogdan.licenta;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.net.wifi.WifiManager;
-import android.os.SystemClock;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -24,8 +22,8 @@ public class WifiReceiver extends BroadcastReceiver {
 
     public WifiReceiver(Context contextpar) {
         this.context = contextpar;
-        textWifiInfo = ((SensorActivity)context).findViewById(R.id.textView_wifiInfo);
-        textWifiNr = ((SensorActivity)context).findViewById(R.id.textView_wifiNr);
+        textWifiInfo = ((RegisterActivity)context).findViewById(R.id.textView_wifiInfo);
+        textWifiNr = ((RegisterActivity)context).findViewById(R.id.textView_wifiNr);
     }
 
     @Override

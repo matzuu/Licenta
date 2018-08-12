@@ -200,10 +200,9 @@ public class FileHelper extends Thread{
                     pos.CoordY = coordy;
                     pos.Level = 0;
                     pos.Orientation = 0;
-                    pos.Cluster = "test";
-                    auxl = myDb.insertPosData(pos);
-                    if (auxl >= 0)
-                        lastPosID = auxl;
+                    pos.Cluster = "crawDad";
+                    lastPosID = myDb.insertPosData(pos);
+
                 }
                 //gasesc toate intensitatile de semnal asociate cu o adresa mac
                 auxLine = new ArrayList<>();
@@ -223,8 +222,11 @@ public class FileHelper extends Thread{
                         if (mSigStr.find()) {
                             sigStr = new SignalStr();
                             sigStr.SignalStrength = Integer.parseInt(mSigStr.group());
-                            sigStr.Pos_ID = lastPosID;
-                            sigStr.Router_Address = macAddressAux;
+                            sigStr.ref_CoordX = pos.CoordX;
+                            sigStr.ref_CoordY = pos.CoordY;
+                            sigStr.ref_Orientation=pos.Orientation;
+                            sigStr.ref_Cluster = pos.Cluster;
+                            sigStr.BSSID = macAddressAux;
                             signalStrHashSet.add(sigStr);
                             Log.d("parseString", "marimea signalStrset: " + signalStrHashSet.size());
                         }

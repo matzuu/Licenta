@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -30,12 +31,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.net.NetworkInterface;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-public class SensorActivity extends AppCompatActivity implements SensorEventListener {
+public class RegisterActivity extends AppCompatActivity implements SensorEventListener {
 
     Button btnMainActivity;
     Button btnGetWifiInfo;
@@ -57,7 +57,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
     Long startTime;
     Long timeDifference;
     DatabaseHelper myDb;
-    Long lastPosID;
+    Position lastPos;
     Integer nrOfScans;
 
 
@@ -72,7 +72,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_sensor);
+        setContentView(R.layout.activity_register);
 
         myDb = new DatabaseHelper(this);
 
@@ -107,27 +107,33 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                     textWifiInfo.setText("Seconds elapsed: "+Double.toString(timeDifference /1000.0));
                     nrOfScans++;
                 }
-                if (nrOfScans < 10){
-                    mWifiManager.startScan();
-                }
-                else{
-                    nrOfScans = 0;
-                    //2 new method?
-                    HashSet<String> macAddressSet = new HashSet<>();
+                if (nrOfScans != null) {
+                    if (nrOfScans < 10) {
+                        mWifiManager.startScan();
+                    } else {
+                        if (lastPos!= null && lastPos.CoordX != null && lastPos.CoordY!=null && lastPos.Orientation != null && lastPos.Cluster != null){
+                            nrOfScans = null;
+                            //2 new method?
+                            HashSet<String> macAddressSet = new HashSet<>();
 
-                    StringBuffer buffer = new StringBuffer();
-                    for (SignalStr s : capturedSigSet) {
-                        macAddressSet.add(s.Router_Address);
-                        s.Pos_ID =lastPosID;
+                            StringBuffer buffer = new StringBuffer();
+                            for (SignalStr s : capturedSigSet) {
+                                macAddressSet.add(s.BSSID);
+                                s.ref_CoordX = lastPos.CoordX;
+                                s.ref_CoordY = lastPos.CoordY;
+                                s.ref_Orientation = lastPos.Orientation;
+                                s.ref_Cluster = lastPos.Cluster;
+                                buffer.append("POS_KEY :" + s.ref_CoordX+" "+s.ref_CoordY +" "+s.ref_Orientation +" "+s.ref_Cluster +" "+ "\n");
+                                buffer.append("BSSID :" + s.BSSID + "\n");
+                                buffer.append("Signal Str :" + s.SignalStrength + "\n\n");
+                            }
+                            showMessage("Captured Data", buffer.toString());
 
-                        buffer.append("POS_ID :" + s.Pos_ID  + "\n");
-                        buffer.append("Router_address :" + s.Router_Address + "\n");
-                        buffer.append("Signal Str :" +  s.SignalStrength + "\n\n");
+                            myDb.insertRouterData(macAddressSet);
+                            myDb.insertSignalStrData(capturedSigSet);
+                        }
+
                     }
-                    showMessage("Captured Data", buffer.toString());
-
-                    myDb.insertRouterData(macAddressSet);
-                    myDb.insertSignalStrData(capturedSigSet);
                 }
             }
         };
@@ -167,24 +173,46 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         checkPermissions();
                         if ( finePermission == true){
                             nrOfScans = 0;
-                            Position p = new Position(
+                            lastPos = new Position(
                                     Double.parseDouble(editCoordX.getText().toString()),
                                     Double.parseDouble(editCoordY.getText().toString()),
                                     Integer.parseInt(editLevel.getText().toString()),
                                     Integer.parseInt(editOrientation.getText().toString()),
                                     editCluster.getText().toString());
-                            lastPosID = myDb.insertPosData(p);
+                            Long lastPosID = myDb.insertPosData(lastPos);
+
                             if (lastPosID >= 0){
-                                Toast.makeText(SensorActivity.this, "Position Inserted , lastId: "+lastPosID, Toast.LENGTH_LONG).show();
+                                Toast.makeText(RegisterActivity.this, "Position Inserted , lastId: "+lastPosID, Toast.LENGTH_LONG).show();
 
                                 startTime = SystemClock.elapsedRealtime();
                                 ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
                                 mWifiManager.startScan();
 
+                                }
+
+                            else {
+                                Cursor res = myDb.queryPosition(lastPos);
+                                if (res.getCount() == 0)
+                                    Toast.makeText(RegisterActivity.this, "Position not Inserted", Toast.LENGTH_LONG).show();
+
+                                else {
+
+                                    Integer colIndex = res.getColumnIndex("rowid");
+                                    if (res.moveToFirst()) {
+                                        lastPosID =(long)res.getInt(colIndex);
+                                        Toast.makeText(RegisterActivity.this, "Position already Inserted", Toast.LENGTH_LONG).show();
+                                    } else {
+                                        Toast.makeText(RegisterActivity.this, "Position not found", Toast.LENGTH_LONG).show();
+                                    }
+
+                                    startTime = SystemClock.elapsedRealtime();
+                                    ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
+                                    mWifiManager.startScan();
+                                }
                             }
 
-                            else
-                                Toast.makeText(SensorActivity.this, "Position not Inserted", Toast.LENGTH_LONG).show();
+
+
                         }
                         else {
                             Log.d("WIFI","### Missing Permissions: "+finePermission);
@@ -203,7 +231,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
         textWifiNr.setText("Nr of detected APs: "+ wifiScanList.size());
         for (ScanResult scanResult : wifiScanList) {
             SignalStr sigStr = new SignalStr();
-            sigStr.Router_Address = scanResult.BSSID;
+            sigStr.BSSID = scanResult.BSSID;
             sigStr.SignalStrength = scanResult.level;
 
 
@@ -222,11 +250,11 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
     public void checkPermissions(){
         try {
             //Fine Location
-            if (ContextCompat.checkSelfPermission(SensorActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
+            if (ContextCompat.checkSelfPermission(RegisterActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED){
                 //Permission Not Granted
                 Log.d("WIFI","### Requesting Permission Fine Location");
-                ActivityCompat.requestPermissions(SensorActivity.this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1);
+                ActivityCompat.requestPermissions(RegisterActivity.this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1);
             }
             else{
                 Log.d("WIFI","### Fine Location Permission already granted ");
@@ -252,7 +280,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                 else {
                     Log.d("RequestPermission", "FineLocation PERMISSION DENIED");
                     finePermission = false;
-                    Toast.makeText(SensorActivity.this, "FineLocation PERMISSION DENIED", Toast.LENGTH_LONG).show();
+                    Toast.makeText(RegisterActivity.this, "FineLocation PERMISSION DENIED", Toast.LENGTH_LONG).show();
                 }
         }
     }
@@ -322,8 +350,10 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
             textViewCompass.setText("Azimuth: "+ Integer.toString((int)Math.toDegrees((double)mOrientation[0])));
             textViewCompass2.setText("Pitch: "+Integer.toString((int)Math.toDegrees((double)mOrientation[1])));
             textViewCompass3.setText("Roll: "+Integer.toString((int)Math.toDegrees((double)mOrientation[2])));
-
-            editOrientation.setText(Integer.toString((int)Math.toDegrees((double)mOrientation[0])));
+            double degreeToInsert;
+            degreeToInsert = Math.toDegrees((double)mOrientation[0]); //raw
+            degreeToInsert = ((int)(degreeToInsert + 22.5)/45)*45;//Impartit pe N , NV , V , SV...
+            editOrientation.setText(Integer.toString((int)degreeToInsert));
         }
     }
 

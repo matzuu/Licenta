@@ -6,103 +6,9 @@
     android:layout_height="match_parent"
     tools:context="com.example.bogdan.licenta.MainActivity">
 
-    <TextView
-        android:id="@+id/textViewCoordX"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginEnd="72dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="32dp"
-        android:text="CoordX"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        app:layout_constraintEnd_toStartOf="@+id/editText_CoordX"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/textViewCoordY"
-        android:layout_width="92dp"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/editText_CoordX"
-        android:layout_marginEnd="40dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="CoordY"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        app:layout_constraintEnd_toStartOf="@+id/editText_CoordY"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewCoordX" />
-
-    <TextView
-        android:id="@+id/textViewLevel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/editText_CoordY"
-        android:layout_marginEnd="68dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="Level"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        app:layout_constraintEnd_toStartOf="@+id/editText_Level"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewCoordY" />
-
-    <EditText
-        android:id="@+id/editText_CoordX"
-        android:layout_width="220dp"
-        android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/textViewCoordX"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="16dp"
-        android:layout_toEndOf="@+id/textViewCoordX"
-        android:layout_toRightOf="@+id/textViewCoordX"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <EditText
-        android:id="@+id/editText_CoordY"
-        android:layout_width="220dp"
-        android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/textViewCoordY"
-        android:layout_marginEnd="8dp"
-        android:layout_toEndOf="@+id/textViewCoordY"
-        android:layout_toRightOf="@+id/textViewCoordY"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText_CoordX" />
-
-    <EditText
-        android:id="@+id/editText_Level"
-        android:layout_width="220dp"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/editText_CoordY"
-        android:layout_marginEnd="8dp"
-        android:layout_toEndOf="@+id/textViewLevel"
-        android:layout_toRightOf="@+id/textViewLevel"
-        android:text="0"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText_CoordY" />
-
-    <Button
-        android:id="@+id/button_add"
-        android:layout_width="92dp"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/editText_Level"
-        android:text="Add Data"
-        app:layout_constraintStart_toEndOf="@+id/button_viewAll"
-        app:layout_constraintTop_toTopOf="@+id/button_viewAll" />
-
     <Button
         android:id="@+id/button_viewAll"
-        android:layout_width="92dp"
+        android:layout_width="90dp"
         android:layout_height="wrap_content"
         android:layout_above="@+id/button_update"
         android:layout_centerHorizontal="true"
@@ -110,174 +16,61 @@
         android:layout_marginTop="8dp"
         android:text="View All"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewCluster" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/button_update"
-        android:layout_width="92dp"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/button_add"
-        android:text="Update"
-        app:layout_constraintStart_toEndOf="@+id/button_delete"
-        app:layout_constraintTop_toBottomOf="@+id/button_add" />
-
-
-    <Button
-        android:id="@+id/button_delete"
-        android:layout_width="92dp"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/button_viewAll"
-        android:layout_alignStart="@+id/button_viewAll"
-        android:layout_below="@+id/button_viewAll"
-        android:layout_centerVertical="true"
-        android:layout_marginStart="8dp"
-        android:text="Delete"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button_viewAll" />
-
-    <TextView
-        android:id="@+id/textView_id"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/editText_Level"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="28dp"
-        android:text="id"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        app:layout_constraintEnd_toStartOf="@+id/editText_PosID"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewLevel" />
-
-    <EditText
-        android:id="@+id/editText_PosID"
-        android:layout_width="220dp"
-        android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/textView_id"
-        android:layout_marginEnd="8dp"
-        android:layout_toEndOf="@+id/textViewLevel"
-        android:layout_toRightOf="@+id/textViewLevel"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText_Level" />
-
-    <TextView
-        android:id="@+id/textViewOrientation"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:text="TextView"
-        android:textAppearance="@android:style/TextAppearance.Material.Large"
-        app:layout_constraintEnd_toStartOf="@+id/editText_Orientation"
-        app:layout_constraintHorizontal_bias="0.02"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView_id"
-        tools:text="Orientare" />
-
-    <TextView
-        android:id="@+id/textViewCluster"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="20dp"
-        android:text="Cluster"
-        android:textAppearance="@android:style/TextAppearance.Material.Large"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewOrientation" />
-
-    <EditText
-        android:id="@+id/editText_Orientation"
-        android:layout_width="220dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:ems="10"
-        android:inputType="textPersonName"
-        android:text="0"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText_PosID" />
-
-    <EditText
-        android:id="@+id/editText_Cluster"
-        android:layout_width="220dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:ems="10"
-        android:inputType="textPersonName"
-        android:text="First"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText_Orientation" />
-
-    <Button
-        android:id="@+id/button_read"
-        android:layout_width="92dp"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:text="read"
-        app:layout_constraintStart_toEndOf="@+id/button_write"
-        app:layout_constraintTop_toBottomOf="@+id/button_update" />
-
-    <Button
-        android:id="@+id/button_write"
-        android:layout_width="92dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:text="write"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button_delete" />
-
-    <EditText
-        android:id="@+id/editText_MACAddr"
-        android:layout_width="173dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:ems="10"
-        android:inputType="textPersonName"
-        android:text="MacAddress"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText_Cluster" />
-
-    <EditText
-        android:id="@+id/editText_SignalS"
-        android:layout_width="170dp"
-        android:layout_height="50dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="4dp"
-        android:ems="10"
-        android:inputType="textPersonName"
-        android:text="Signal S"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText_MACAddr" />
 
     <Button
         android:id="@+id/button_SigStrView"
-        android:layout_width="92dp"
+        android:layout_width="90dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
         android:text="SigStrVi"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button_write" />
+        app:layout_constraintStart_toEndOf="@+id/button_viewAll"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/button_CountSig"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:text="CountSig"
         app:layout_constraintStart_toEndOf="@+id/button_SigStrView"
-        app:layout_constraintTop_toBottomOf="@+id/button_read" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/button_toSensorActivity"
+        android:id="@+id/button_toRegisterActivity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
-        android:text="SensorAct"
+        android:text="Register Act"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/button_read"
+        android:layout_width="90dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="Read"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button_viewAll" />
+
+    <Button
+        android:id="@+id/button_write"
+        android:layout_width="90dp"
+        android:layout_height="wrap_content"
+        android:text="Write"
+        app:layout_constraintStart_toEndOf="@+id/button_read"
+        app:layout_constraintTop_toBottomOf="@+id/button_SigStrView" />
+
+    <Button
+        android:id="@+id/button_toLocatingActivity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginStart="8dp"
+        android:text="Locating Act"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 </android.support.constraint.ConstraintLayout>
