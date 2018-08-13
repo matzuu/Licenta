@@ -3,10 +3,10 @@ package com.example.bogdan.licenta;
 import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -30,8 +30,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.net.NetworkInterface;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
@@ -59,6 +57,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
     DatabaseHelper myDb;
     Position lastPos;
     Integer nrOfScans;
+    HashSet<SignalStr> capturedSigSet = new HashSet<>();
 
 
     private float[] mLastAccelerometer = new float[3];
@@ -85,6 +84,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         textWifiInfo = findViewById(R.id.textView_wifiInfo);
         textWifiNr = findViewById(R.id.textView_wifiNr);
 
+        capturedSigSet = new HashSet<>();
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -93,45 +93,51 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         mWifiReceiver = new BroadcastReceiver() {
 
-            HashSet<SignalStr> capturedSigSet = new HashSet<>();
+
 
             @Override
             public void onReceive(Context c, Intent intent) {
-                capturedSigSet.addAll(getScanResultInfo());
-                if(startTime != null) {
-                    timeDifference = SystemClock.elapsedRealtime() - startTime;
-                    textWifiInfo.setText("Seconds elapsed: "+Double.toString(timeDifference /1000.0));
-                    nrOfScans++;
-                }
-                if (nrOfScans != null) {
-                    if (nrOfScans < 10) {
-                        mWifiManager.startScan();
-                    } else {
-                        nrOfScans = 0;
-                        // new method?
-                        HashSet<String> macAddressSet = new HashSet<>();
 
-                        StringBuffer buffer = new StringBuffer();
-                        for (SignalStr s : capturedSigSet) {
-                            macAddressSet.add(s.BSSID);
-                            s.ref_CoordX = lastPos.CoordX;
-                            s.ref_CoordY = lastPos.CoordY;
-                            s.ref_Orientation = lastPos.Orientation;
-                            s.ref_Cluster = lastPos.Cluster;
-                            buffer.append("POS_KEY :" + s.ref_CoordX+" "+s.ref_CoordY +" "+s.ref_Orientation +" "+s.ref_Cluster +" "+ "\n");
-                            buffer.append("BSSID :" + s.BSSID + "\n");
-                            buffer.append("Signal Str :" + s.SignalStrength + "\n\n");
+                if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
+                    capturedSigSet.addAll(getScanResultInfo());
+                    if (startTime != null) {
+                        timeDifference = SystemClock.elapsedRealtime() - startTime;
+                        textWifiInfo.setText("Seconds elapsed: " + Double.toString(timeDifference / 1000.0));
+                        nrOfScans++;
+                    }
+                    if (nrOfScans != null) {
+                        if (nrOfScans < 10) {
+                            mWifiManager.startScan();
+                        } else {
+                            nrOfScans = 0;
+                            // new method?
+                            HashSet<String> macAddressSet = new HashSet<>();
+
+                            StringBuffer buffer = new StringBuffer();
+                            for (SignalStr s : capturedSigSet) {
+                                macAddressSet.add(s.BSSID);
+                                /*
+                                s.ref_CoordX = lastPos.CoordX;
+                                s.ref_CoordY = lastPos.CoordY;
+                                s.ref_Orientation = lastPos.Orientation;
+                                s.ref_Cluster = lastPos.Cluster;
+
+                                buffer.append("POS_KEY :" + s.ref_CoordX + " " + s.ref_CoordY + " " + s.ref_Orientation + " " + s.ref_Cluster + " " + "\n");
+                                */
+                                buffer.append("BSSID :" + s.BSSID + "\n");
+                                buffer.append("Signal Str :" + s.SignalStrength + "\n\n");
+                            }
+                            showMessage("Captured Data", buffer.toString());
+
+
                         }
-                        showMessage("Captured Data", buffer.toString());
-
-
                     }
                 }
             }
         };
 
 
-        getWifiInfo();
+        algorithmED();
         toMainActivity();
 
     }
@@ -157,26 +163,40 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
     // WIFI ////////////
 
-    public void getWifiInfo(){
+    public void algorithmED(){
         btnSearchED.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        finePermission = false;
-                        checkPermissions();
-                        if ( finePermission == true){
-                            nrOfScans = 0;
-                            startTime = SystemClock.elapsedRealtime();
+                        initializeWifiScanner();
+                        Boolean isStill = true;
+                        //todo recognition  ActivityRecognitionClient cu Still
+                        if (isStill == true){
+                            Position pos;
 
-                            ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
-                            mWifiManager.startScan();
+                            double degree = ((int)(Math.toDegrees((double)mOrientation[0])+ 22.5)/45)*45;
+                            pos = Algorithms.algEuclideanDistance(capturedSigSet,(int)degree,getApplicationContext(),myDb);
                         }
-                        else {
-                            Log.d("WIFI","### Missing Permissions: "+finePermission);
-                        }
+
                     }
                 }
         );
+    }
+
+    public void initializeWifiScanner(){
+        finePermission = false;
+        checkPermissions();
+        if ( finePermission == true){
+            nrOfScans = 0;
+            startTime = SystemClock.elapsedRealtime();
+
+            ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
+            mWifiManager.startScan();
+        }
+        else {
+            Log.d("WIFI","### Missing Permissions: "+finePermission);
+        }
+
     }
 
     public HashSet<SignalStr> getScanResultInfo(){

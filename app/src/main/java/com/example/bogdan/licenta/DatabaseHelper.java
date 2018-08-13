@@ -228,7 +228,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return res;
     }
 
-    public Cursor queryAllClustersFromBSSID(HashSet<String> SetBSSID){
+    public Cursor queryClustersFromBSSID(HashSet<String> SetBSSID){
 
         String[] whereArgs = (String[]) SetBSSID.toArray(new String[SetBSSID.size()]);
         String inClause = whereArgs.toString();
@@ -245,9 +245,29 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return res;
     }
 
+    public Cursor queryAllPositionsFromBSSID(HashSet<String> SetBSSID){
+        String[] whereArgs = (String[]) SetBSSID.toArray(new String[SetBSSID.size()]);
+        String inClause = whereArgs.toString();
+
+        String MY_QUERY = "SELECT TABLE_POSITION.* , TABLE_SIGSTR.SignalStrength , TABLE_SIGSTR.BSSID " +
+                "FROM "+ TABLE_POSITION +" p " +
+                "JOIN "+ TABLE_SIGSTR +" s " +
+                "ON p.CoordX=s.ref_CoordX AND p.CoordY=s.ref_CoordY AND p.Orientation=s.ref_Orientation AND p.Cluster = s.ref_Cluster" +
+                "WHERE s.BSSID in " + inClause ;
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor res = db.rawQuery(MY_QUERY, null);
+
+        return res;
+
+
+    }
+
     public long getSigCount(){
         return DatabaseUtils.queryNumEntries(this.getWritableDatabase(),TABLE_SIGSTR,null);
     }
+
+
 
     //UPDATE
     public boolean updateData(String id,Double coordX,Double coordY,Integer level,Integer orientation,String cluster) {
