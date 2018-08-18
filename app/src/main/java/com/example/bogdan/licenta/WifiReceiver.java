@@ -18,7 +18,7 @@ public class WifiReceiver extends BroadcastReceiver {
     Long startTime;
     Long timeDifference;
     Integer nrOfScans = 0;
-    List<SignalStr> capturedSigList = new ArrayList<>();
+    List<Measurement> capturedMeasurementList = new ArrayList<>();
 
     public WifiReceiver(Context contextpar) {
         this.context = contextpar;

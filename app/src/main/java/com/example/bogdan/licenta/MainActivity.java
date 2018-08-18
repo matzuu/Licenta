@@ -13,6 +13,9 @@ import android.widget.Toast;
 
 import java.util.List;
 
+import static com.example.bogdan.licenta.DatabaseHelper.TABLE_MEASUREMENTS;
+import static com.example.bogdan.licenta.DatabaseHelper.TABLE_POSITION;
+
 public class MainActivity extends AppCompatActivity {
     DatabaseHelper myDb;
 
@@ -80,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Cursor res = myDb.getAllData("position_table");
+                        Cursor res = myDb.getAllData(TABLE_POSITION);
                         //position_table
                         //posRouter_table
                         //router_table
@@ -112,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
             new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Cursor res = myDb.getAllData("posRouter_table");
+                    Cursor res = myDb.getAllData(TABLE_MEASUREMENTS);
                     //position_table
                     //posRouter_table
                     //router_table
@@ -121,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
                         showMessage("Error", "Nothing found");
                         return;
                     }
-                    Log.d("TEEST","VIEW SIG STR DATA");
+                    Log.d("TEEST","VIEW MEASUREMENTS DATA");
                     StringBuffer buffer = new StringBuffer();
                     while (res.moveToNext()) {
                         //buffer.append("Id :" + res.getString(0) + "\n");
@@ -143,9 +146,9 @@ public class MainActivity extends AppCompatActivity {
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        long ret = myDb.getSigCount();
+                        long ret = myDb.getMeasurementCount();
                         StringBuffer buffer = new StringBuffer();
-                        buffer.append("Count Sig Str : " + ret + " \n");
+                        buffer.append("Count MEASUREMENTS : " + ret + " \n");
 
 
                         // Show all data

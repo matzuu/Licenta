@@ -1,7 +1,6 @@
 package com.example.bogdan.licenta;
 
 import android.content.Context;
-import android.support.annotation.RequiresPermission;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -131,7 +130,7 @@ public class FileHelper extends Thread{
         }
 
 
-        List<SignalStr> strList = new ArrayList<>();
+        List<Measurement> measurementsList = new ArrayList<>();
         Log.d("READLINE","Size of inputList After "+String.valueOf(inputList.size()));
         Log.d("READLINE", "First row before cleanup: "+inputList.get(0));
         StringBuilder sb;
@@ -159,9 +158,9 @@ public class FileHelper extends Thread{
         Matcher mMacAddress;
         HashSet<String> macAddressSet = new HashSet<>();
         String macAddressAux;
-        Matcher mSigStr;
-        HashSet<SignalStr> signalStrHashSet = new HashSet<>();
-        SignalStr sigStr = new SignalStr();
+        Matcher mMeasurement;
+        HashSet<Measurement> measurementHashSet = new HashSet<>();
+        Measurement measurement = new Measurement();
         List<String> auxLine = new ArrayList<>();
         String aux = "";
         Long auxl;
@@ -214,29 +213,29 @@ public class FileHelper extends Thread{
                 for (String s : auxLine) {
                     Log.d("parseString", "Stringul s: " + s);
                     mMacAddress = Pattern.compile("\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}").matcher(s);
-                    mSigStr = Pattern.compile("-\\d{2}").matcher(s);
+                    mMeasurement = Pattern.compile("-\\d{2}").matcher(s);
                     if (mMacAddress.find()) {
                         macAddressAux = mMacAddress.group();
                         macAddressSet.add(macAddressAux);
 
-                        if (mSigStr.find()) {
-                            sigStr = new SignalStr();
-                            sigStr.SignalStrength = Integer.parseInt(mSigStr.group());
-                            sigStr.ref_CoordX = pos.CoordX;
-                            sigStr.ref_CoordY = pos.CoordY;
-                            sigStr.ref_Orientation=pos.Orientation;
-                            sigStr.ref_Cluster = pos.Cluster;
-                            sigStr.BSSID = macAddressAux;
-                            signalStrHashSet.add(sigStr);
-                            Log.d("parseString", "marimea signalStrset: " + signalStrHashSet.size());
+                        if (mMeasurement.find()) {
+                            measurement = new Measurement();
+                            measurement.SignalStrength = Integer.parseInt(mMeasurement.group());
+                            measurement.ref_CoordX = pos.CoordX;
+                            measurement.ref_CoordY = pos.CoordY;
+                            measurement.ref_Orientation=pos.Orientation;
+                            measurement.ref_Cluster = pos.Cluster;
+                            measurement.BSSID = macAddressAux;
+                            measurementHashSet.add(measurement);
+                            Log.d("parseString", "marimea MeasurementSet: " + measurementHashSet.size());
                         }
                     }
                 }//end aux for
             }
         }//end for
-        Log.d("parseString", "sizeOfmacAddressSet: " + macAddressSet.size() + " \n sizeOfsignalStrHashSet " + signalStrHashSet.size());
+        Log.d("parseString", "sizeOfmacAddressSet: " + macAddressSet.size() + " \n sizeOfMeasurementHashSet " + measurementHashSet.size());
         myDb.insertRouterData(macAddressSet);
-        myDb.insertSignalStrData(signalStrHashSet);
+        myDb.insertMeasurementData(measurementHashSet);
 
         //Pozitie
         //Router Sgl Str

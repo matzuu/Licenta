@@ -3,7 +3,6 @@ package com.example.bogdan.licenta;
 import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
@@ -37,6 +36,8 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
     Button btnMainActivity;
     Button btnSearchED;
+    Button btnStartScan;
+    Button btnViewCapturedData;
     TextView textViewCompass;
     TextView textViewCompass2;
     TextView textViewCompass3;
@@ -57,7 +58,9 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
     DatabaseHelper myDb;
     Position lastPos;
     Integer nrOfScans;
-    HashSet<SignalStr> capturedSigSet = new HashSet<>();
+    StringBuffer capturedDatabuffer;
+    HashSet<Measurement> capturedMeasurementSet;
+
 
 
     private float[] mLastAccelerometer = new float[3];
@@ -77,6 +80,8 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
         btnMainActivity = (Button) findViewById(R.id.button_ToMainActivity2);
         btnSearchED = (Button) findViewById(R.id.button_SearchED);
+        btnStartScan = findViewById(R.id.button_scanMeasurements);
+        btnViewCapturedData = findViewById(R.id.button_viewCapturedData);
         textViewCompass = findViewById(R.id.textView_CompassDegrees);
         textViewCompass2 = findViewById(R.id.textView_CompassDegrees2);
         textViewCompass3 = findViewById(R.id.textView_CompassDegrees3);
@@ -84,7 +89,10 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         textWifiInfo = findViewById(R.id.textView_wifiInfo);
         textWifiNr = findViewById(R.id.textView_wifiNr);
 
-        capturedSigSet = new HashSet<>();
+        capturedMeasurementSet = new HashSet<>();
+
+        capturedDatabuffer = new StringBuffer();
+        capturedDatabuffer.append("N/A");
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -92,44 +100,20 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
         mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         mWifiReceiver = new BroadcastReceiver() {
-
-
-
             @Override
             public void onReceive(Context c, Intent intent) {
 
                 if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-                    capturedSigSet.addAll(getScanResultInfo());
-                    if (startTime != null) {
+                    capturedMeasurementSet.addAll(getScanResultInfo());
+                    if (startTime != null && nrOfScans != null) {
                         timeDifference = SystemClock.elapsedRealtime() - startTime;
                         textWifiInfo.setText("Seconds elapsed: " + Double.toString(timeDifference / 1000.0));
                         nrOfScans++;
-                    }
-                    if (nrOfScans != null) {
-                        if (nrOfScans < 10) {
+                        if (nrOfScans < 3) {
                             mWifiManager.startScan();
                         } else {
-                            nrOfScans = 0;
                             // new method?
-                            HashSet<String> macAddressSet = new HashSet<>();
-
-                            StringBuffer buffer = new StringBuffer();
-                            for (SignalStr s : capturedSigSet) {
-                                macAddressSet.add(s.BSSID);
-                                /*
-                                s.ref_CoordX = lastPos.CoordX;
-                                s.ref_CoordY = lastPos.CoordY;
-                                s.ref_Orientation = lastPos.Orientation;
-                                s.ref_Cluster = lastPos.Cluster;
-
-                                buffer.append("POS_KEY :" + s.ref_CoordX + " " + s.ref_CoordY + " " + s.ref_Orientation + " " + s.ref_Cluster + " " + "\n");
-                                */
-                                buffer.append("BSSID :" + s.BSSID + "\n");
-                                buffer.append("Signal Str :" + s.SignalStrength + "\n\n");
-                            }
-                            showMessage("Captured Data", buffer.toString());
-
-
+                            handleEndOfScanning();
                         }
                     }
                 }
@@ -138,6 +122,8 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
 
         algorithmED();
+        startScan();
+        viewData();
         toMainActivity();
 
     }
@@ -163,19 +149,24 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
     // WIFI ////////////
 
+
+
+
+
+
     public void algorithmED(){
         btnSearchED.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        initializeWifiScanner();
                         Boolean isStill = true;
-                        //todo recognition  ActivityRecognitionClient cu Still
+                        //todo recognition  ActivityRecognitionClient de detectat daca Still / Not Walking
                         if (isStill == true){
                             Position pos;
 
                             double degree = ((int)(Math.toDegrees((double)mOrientation[0])+ 22.5)/45)*45;
-                            pos = Algorithms.algEuclideanDistance(capturedSigSet,(int)degree,getApplicationContext(),myDb);
+                            pos = Algorithms.algEuclideanDistance1(capturedMeasurementSet,(int)degree,getApplicationContext(),myDb,"First");
+                            Log.d("LocatingAct","Exited algEuclidianDistance");
                         }
 
                     }
@@ -183,7 +174,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         );
     }
 
-    public void initializeWifiScanner(){
+    public void startWifiScanning(){
         finePermission = false;
         checkPermissions();
         if ( finePermission == true){
@@ -199,23 +190,37 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
     }
 
-    public HashSet<SignalStr> getScanResultInfo(){
+    public void handleEndOfScanning(){
+        HashSet<String> macAddressSet = new HashSet<>();
+
+        capturedDatabuffer = new StringBuffer();
+        capturedDatabuffer.append("Captured Measurments: \n\n ");
+        for (Measurement s : capturedMeasurementSet) {
+            macAddressSet.add(s.BSSID);
+
+            capturedDatabuffer.append("BSSID :" + s.BSSID + "\n");
+            capturedDatabuffer.append("Signal Str :" + s.SignalStrength + "\n\n");
+        }
+        showMessage("Captured Data", capturedDatabuffer.toString());
+    }
+
+    public HashSet<Measurement> getScanResultInfo(){
         int level;
-        HashSet<SignalStr> retList = new HashSet<>();
+        HashSet<Measurement> retList = new HashSet<>();
         //textWifiInfo.setText("");
         List<ScanResult> wifiScanList = mWifiManager.getScanResults();
         Log.d("WIFI","initializat ScanResult List: "+ wifiScanList.size());
         textWifiNr.setText("Nr of detected APs: "+ wifiScanList.size());
         for (ScanResult scanResult : wifiScanList) {
-            SignalStr sigStr = new SignalStr();
-            sigStr.BSSID = scanResult.BSSID;
-            sigStr.SignalStrength = scanResult.level;
+            Measurement measurement = new Measurement();
+            measurement.BSSID = scanResult.BSSID;
+            measurement.SignalStrength = scanResult.level;
 
 
-            //sigStr.Pos_ID /////////// De adaugat
+            //measurement.Pos_ID /////////// De adaugat
 
 
-            retList.add(sigStr);
+            retList.add(measurement);
             level = WifiManager.calculateSignalLevel(scanResult.level, 5);
             Log.d("WIFI","Level is " + level + " out of 5 " + scanResult.level + " on " + scanResult.BSSID + "  ");
             //textWifiInfo.append(scanResult.SSID  +" "+ scanResult.BSSID+" "+ scanResult.level+"\n\n");
@@ -299,11 +304,33 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
             currentDegree = -degree;
 
             //textViewCompass.setText("Azimuth: "+ Integer.toString((int)(Math.toDegrees((double)mOrientation[0]))));
-            double degreeToShow;
-            degreeToShow = Math.toDegrees((double)mOrientation[0]); //raw
-            degreeToShow = ((int)(degreeToShow + 22.5)/45)*45;//Impartit pe N , NV , V , SV...
-            textViewCompass.setText("Azimuth: "+ Integer.toString((int)degreeToShow));
+            Integer degreeToShow;
+            degreeToShow = Algorithms.radiansToRounded45Degrees(mOrientation[0]);
+            textViewCompass.setText("Azimuth: "+ Integer.toString(degreeToShow));
         }
+    }
+
+    public void startScan(){
+        btnStartScan.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        capturedMeasurementSet = new HashSet<>();
+                        startWifiScanning();
+
+                    }
+                }
+        );
+    }
+    public void viewData(){
+        btnViewCapturedData.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        showMessage("Captured Data", capturedDatabuffer.toString());
+                    }
+                }
+        );
     }
 
     public void showMessage(String title, String Message) {

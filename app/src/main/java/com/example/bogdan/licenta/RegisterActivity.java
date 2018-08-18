@@ -97,18 +97,17 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         mWifiReceiver = new BroadcastReceiver() {
 
-            HashSet<SignalStr> capturedSigSet = new HashSet<>();
+            HashSet<Measurement> capturedMeasurementSet = new HashSet<>();
 
             @Override
             public void onReceive(Context c, Intent intent) {
-                capturedSigSet.addAll(getScanResultInfo());
-                if(startTime != null) {
+                capturedMeasurementSet.addAll(getScanResultInfo());
+                if(startTime != null && nrOfScans!= null) {
                     timeDifference = SystemClock.elapsedRealtime() - startTime;
                     textWifiInfo.setText("Seconds elapsed: "+Double.toString(timeDifference /1000.0));
                     nrOfScans++;
-                }
-                if (nrOfScans != null) {
-                    if (nrOfScans < 10) {
+
+                    if (nrOfScans < 3) {
                         mWifiManager.startScan();
                     } else {
                         if (lastPos!= null && lastPos.CoordX != null && lastPos.CoordY!=null && lastPos.Orientation != null && lastPos.Cluster != null){
@@ -117,7 +116,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                             HashSet<String> macAddressSet = new HashSet<>();
 
                             StringBuffer buffer = new StringBuffer();
-                            for (SignalStr s : capturedSigSet) {
+                            for (Measurement s : capturedMeasurementSet) {
                                 macAddressSet.add(s.BSSID);
                                 s.ref_CoordX = lastPos.CoordX;
                                 s.ref_CoordY = lastPos.CoordY;
@@ -130,9 +129,8 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                             showMessage("Captured Data", buffer.toString());
 
                             myDb.insertRouterData(macAddressSet);
-                            myDb.insertSignalStrData(capturedSigSet);
+                            myDb.insertMeasurementData(capturedMeasurementSet);
                         }
-
                     }
                 }
             }
@@ -222,23 +220,23 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         );
     }
 
-    public HashSet<SignalStr> getScanResultInfo(){
+    public HashSet<Measurement> getScanResultInfo(){
         int level;
-        HashSet<SignalStr> retList = new HashSet<>();
+        HashSet<Measurement> retList = new HashSet<>();
         //textWifiInfo.setText("");
         List<ScanResult> wifiScanList = mWifiManager.getScanResults();
         Log.d("WIFI","initializat ScanResult List: "+ wifiScanList.size());
         textWifiNr.setText("Nr of detected APs: "+ wifiScanList.size());
         for (ScanResult scanResult : wifiScanList) {
-            SignalStr sigStr = new SignalStr();
-            sigStr.BSSID = scanResult.BSSID;
-            sigStr.SignalStrength = scanResult.level;
+            Measurement measurement = new Measurement();
+            measurement.BSSID = scanResult.BSSID;
+            measurement.SignalStrength = scanResult.level;
 
 
-            //sigStr.Pos_ID /////////// De adaugat
+            //measurement.Pos_ID /////////// De adaugat
 
 
-            retList.add(sigStr);
+            retList.add(measurement);
             level = WifiManager.calculateSignalLevel(scanResult.level, 5);
             Log.d("WIFI","Level is " + level + " out of 5 " + scanResult.level + " on " + scanResult.BSSID + "  ");
             //textWifiInfo.append(scanResult.SSID  +" "+ scanResult.BSSID+" "+ scanResult.level+"\n\n");
@@ -350,10 +348,9 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
             textViewCompass.setText("Azimuth: "+ Integer.toString((int)Math.toDegrees((double)mOrientation[0])));
             textViewCompass2.setText("Pitch: "+Integer.toString((int)Math.toDegrees((double)mOrientation[1])));
             textViewCompass3.setText("Roll: "+Integer.toString((int)Math.toDegrees((double)mOrientation[2])));
-            double degreeToInsert;
-            degreeToInsert = Math.toDegrees((double)mOrientation[0]); //raw
-            degreeToInsert = ((int)(degreeToInsert + 22.5)/45)*45;//Impartit pe N , NV , V , SV...
-            editOrientation.setText(Integer.toString((int)degreeToInsert));
+            Integer degreeToInsert;
+            degreeToInsert = Algorithms.radiansToRounded45Degrees(mOrientation[0]);
+            editOrientation.setText(Integer.toString(degreeToInsert));
         }
     }
 

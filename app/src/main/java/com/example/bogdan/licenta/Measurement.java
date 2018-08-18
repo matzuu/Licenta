@@ -2,7 +2,7 @@ package com.example.bogdan.licenta;
 
 import android.content.Context;
 
-public class SignalStr {
+public class Measurement {
 
 
     public Double ref_CoordX;
@@ -12,7 +12,7 @@ public class SignalStr {
     public Integer SignalStrength;
     public String BSSID;
 
-    public SignalStr() {
+    public Measurement() {
         ref_CoordX = null;
         ref_CoordY = null;
         ref_Orientation = null;
@@ -20,12 +20,12 @@ public class SignalStr {
         SignalStrength = null;
         BSSID = null;
     }
-    public SignalStr(Integer signalStr,String BSSID){
+    public Measurement(Integer signalStr,String BSSID){
         SignalStrength = signalStr;
         this.BSSID = BSSID;
     }
 
-    public SignalStr( Double coordX, Double coordY, Integer orientation , String cluster,Integer signalStr,String BSSID ) {
+    public Measurement( Double coordX, Double coordY, Integer orientation , String cluster,Integer signalStr,String BSSID ) {
         ref_CoordX = coordX;
         ref_CoordY = coordY;
         ref_Orientation = orientation;

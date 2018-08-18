@@ -66,4 +66,24 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView_wifiInfo" />
 
+    <Button
+        android:id="@+id/button_scanMeasurements"
+        android:layout_width="wrap_content"
+        android:layout_height="49dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
+        android:text="Scan"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_wifiNr" />
+
+    <Button
+        android:id="@+id/button_viewCapturedData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
+        android:text="View Data"
+        app:layout_constraintStart_toEndOf="@+id/button_scanMeasurements"
+        app:layout_constraintTop_toBottomOf="@+id/textView_wifiNr" />
+
 </android.support.constraint.ConstraintLayout>
