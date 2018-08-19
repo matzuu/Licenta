@@ -35,7 +35,7 @@ import java.util.List;
 public class LocatingActivity extends AppCompatActivity implements SensorEventListener {
 
     Button btnMainActivity;
-    Button btnSearchED;
+    Button btnSearchkNN;
     Button btnStartScan;
     Button btnViewCapturedData;
     TextView textViewCompass;
@@ -79,7 +79,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         myDb = new DatabaseHelper(this);
 
         btnMainActivity = (Button) findViewById(R.id.button_ToMainActivity2);
-        btnSearchED = (Button) findViewById(R.id.button_SearchED);
+        btnSearchkNN = (Button) findViewById(R.id.button_SearchKNN);
         btnStartScan = findViewById(R.id.button_scanMeasurements);
         btnViewCapturedData = findViewById(R.id.button_viewCapturedData);
         textViewCompass = findViewById(R.id.textView_CompassDegrees);
@@ -121,7 +121,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         };
 
 
-        algorithmED();
+        algorithmKNN();
         startScan();
         viewData();
         toMainActivity();
@@ -154,8 +154,8 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
 
 
-    public void algorithmED(){
-        btnSearchED.setOnClickListener(
+    public void algorithmKNN(){
+        btnSearchkNN.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -165,7 +165,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
                             Position pos;
 
                             double degree = ((int)(Math.toDegrees((double)mOrientation[0])+ 22.5)/45)*45;
-                            pos = Algorithms.algEuclideanDistance1(capturedMeasurementSet,(int)degree,getApplicationContext(),myDb,"First");
+                            pos = Algorithms.kNN(capturedMeasurementSet,(int)degree,getApplicationContext(),myDb,"First");
                             Log.d("LocatingAct","Exited algEuclidianDistance");
                         }
 
@@ -197,9 +197,9 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         capturedDatabuffer.append("Captured Measurments: \n\n ");
         for (Measurement s : capturedMeasurementSet) {
             macAddressSet.add(s.BSSID);
-
             capturedDatabuffer.append("BSSID :" + s.BSSID + "\n");
             capturedDatabuffer.append("Signal Str :" + s.SignalStrength + "\n\n");
+
         }
         showMessage("Captured Data", capturedDatabuffer.toString());
     }

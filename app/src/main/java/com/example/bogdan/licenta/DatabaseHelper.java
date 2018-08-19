@@ -263,17 +263,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public Cursor queryAllPositionsAndMeasurementsFromBSSIDandCluster(HashSet<String> SetBSSID,String clusterName){
-        String[] whereArgs = (String[]) SetBSSID.toArray(new String[SetBSSID.size()]);
+        String[] whereArgs = SetBSSID.toArray(new String[SetBSSID.size()+1]);
+        whereArgs[SetBSSID.size()] = clusterName;
         String inClause = whereArgs.toString();
 
-        String MY_QUERY = "SELECT "+TABLE_POSITION+".* , "+TABLE_MEASUREMENTS+".SignalStrength , "+TABLE_MEASUREMENTS+".BSSID " +
-                "FROM "+ TABLE_POSITION  +
-                "JOIN "+ TABLE_MEASUREMENTS  +
+        String MY_QUERY = "SELECT "+TABLE_POSITION+".* , "+TABLE_MEASUREMENTS+".ID , "+TABLE_MEASUREMENTS+".SignalStrength , "+TABLE_MEASUREMENTS+".BSSID " +
+                " FROM "+ TABLE_POSITION  +
+                " JOIN "+ TABLE_MEASUREMENTS  +
                 " ON CoordX = ref_CoordX AND CoordY = ref_CoordY AND Orientation = ref_Orientation AND Cluster = ref_Cluster" +
-                " WHERE BSSID in " + inClause  ;//+ " AND p.Cluster = "+clusterName
+                " WHERE BSSID in (" + makeQuestionmarks(SetBSSID.size())+ ") AND Cluster = ? " +
+                " ORDER BY CoordX ASC , CoordY ASC , Orientation ASC ";
+
 
         SQLiteDatabase db = this.getWritableDatabase();
-        Cursor res = db.rawQuery(MY_QUERY, null);
+        Cursor res = db.rawQuery(MY_QUERY, whereArgs);
 
         return res;
 
