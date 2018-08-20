@@ -26,4 +26,8 @@ public class Position {
         Cluster=cluster;
     }
 
+    @Override
+    public String toString() {
+        return "CoordX: "+CoordX+" CoordY: "+CoordY+" Orientation: "+Orientation+" Cluster "+Cluster;
+    }
 }

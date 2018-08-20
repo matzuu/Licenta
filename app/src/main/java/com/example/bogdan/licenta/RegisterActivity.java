@@ -13,6 +13,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -22,6 +23,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
 import android.widget.Button;
@@ -59,6 +61,8 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
     DatabaseHelper myDb;
     Position lastPos;
     Integer nrOfScans;
+    StringBuffer capturedDatabuffer;
+    HashSet<Measurement> capturedMeasurementSet;
 
 
     private float[] mLastAccelerometer = new float[3];
@@ -90,47 +94,40 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         editOrientation = (EditText) findViewById(R.id.editText_Orientation);
         editCluster = (EditText) findViewById(R.id.editText_Cluster);
 
+        capturedDatabuffer = new StringBuffer();
+        capturedDatabuffer.append("N/A");
+        capturedMeasurementSet = new HashSet<>();
+
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
+
+
         mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         mWifiReceiver = new BroadcastReceiver() {
 
-            HashSet<Measurement> capturedMeasurementSet = new HashSet<>();
+
 
             @Override
             public void onReceive(Context c, Intent intent) {
-                capturedMeasurementSet.addAll(getScanResultInfo());
+
                 if(startTime != null && nrOfScans!= null) {
+                    capturedMeasurementSet.addAll(getScanResultInfo());
                     timeDifference = SystemClock.elapsedRealtime() - startTime;
                     textWifiInfo.setText("Seconds elapsed: "+Double.toString(timeDifference /1000.0));
                     nrOfScans++;
 
-                    if (nrOfScans < 3) {
+                    if (nrOfScans < 100) {
                         mWifiManager.startScan();
                     } else {
+                        nrOfScans = null;
+                        startTime = null;
+                        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                         if (lastPos!= null && lastPos.CoordX != null && lastPos.CoordY!=null && lastPos.Orientation != null && lastPos.Cluster != null){
-                            nrOfScans = null;
-                            //2 new method?
-                            HashSet<String> macAddressSet = new HashSet<>();
-
-                            StringBuffer buffer = new StringBuffer();
-                            for (Measurement s : capturedMeasurementSet) {
-                                macAddressSet.add(s.BSSID);
-                                s.ref_CoordX = lastPos.CoordX;
-                                s.ref_CoordY = lastPos.CoordY;
-                                s.ref_Orientation = lastPos.Orientation;
-                                s.ref_Cluster = lastPos.Cluster;
-                                buffer.append("POS_KEY :" + s.ref_CoordX+" "+s.ref_CoordY +" "+s.ref_Orientation +" "+s.ref_Cluster +" "+ "\n");
-                                buffer.append("BSSID :" + s.BSSID + "\n");
-                                buffer.append("Signal Str :" + s.SignalStrength + "\n\n");
-                            }
-                            showMessage("Captured Data", buffer.toString());
-
-                            myDb.insertRouterData(macAddressSet);
-                            myDb.insertMeasurementData(capturedMeasurementSet);
+                            handleEndOfScanning();
                         }
+
                     }
                 }
             }
@@ -161,6 +158,31 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
     }
 
     // WIFI ////////////
+    public void handleEndOfScanning (){
+
+        HashSet<String> macAddressSet = new HashSet<>();
+
+        StringBuffer buffer = new StringBuffer();
+        int size = 0;
+        for (Measurement s : capturedMeasurementSet) {
+            macAddressSet.add(s.BSSID);
+            s.ref_CoordX = lastPos.CoordX;
+            s.ref_CoordY = lastPos.CoordY;
+            s.ref_Orientation = lastPos.Orientation;
+            s.ref_Cluster = lastPos.Cluster;
+            buffer.append("POS_KEY :" + s.ref_CoordX+" "+s.ref_CoordY +" "+s.ref_Orientation +" "+s.ref_Cluster +" "+ "\n");
+            buffer.append("BSSID :" + s.BSSID + "\n");
+            buffer.append("Signal Str :" + s.SignalStrength + "\n\n");
+            size++;
+        }
+        showMessage("Captured Data: "+size, buffer.toString());
+
+        myDb.insertRouterData(macAddressSet);
+        myDb.insertMeasurementData(capturedMeasurementSet);
+        capturedMeasurementSet = new HashSet<>();
+
+
+    }
 
     public void getWifiInfo(){
         btnGetWifiInfo.setOnClickListener(
@@ -181,7 +203,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
 
                             if (lastPosID >= 0){
                                 Toast.makeText(RegisterActivity.this, "Position Inserted , lastId: "+lastPosID, Toast.LENGTH_LONG).show();
-
+                                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                                 startTime = SystemClock.elapsedRealtime();
                                 ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
                                 mWifiManager.startScan();
@@ -202,7 +224,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                                     } else {
                                         Toast.makeText(RegisterActivity.this, "Position not found", Toast.LENGTH_LONG).show();
                                     }
-
+                                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                                     startTime = SystemClock.elapsedRealtime();
                                     ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
                                     mWifiManager.startScan();

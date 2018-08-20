@@ -104,14 +104,15 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
             public void onReceive(Context c, Intent intent) {
 
                 if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-                    capturedMeasurementSet.addAll(getScanResultInfo());
                     if (startTime != null && nrOfScans != null) {
+                        capturedMeasurementSet.addAll(getScanResultInfo());
                         timeDifference = SystemClock.elapsedRealtime() - startTime;
                         textWifiInfo.setText("Seconds elapsed: " + Double.toString(timeDifference / 1000.0));
                         nrOfScans++;
                         if (nrOfScans < 3) {
                             mWifiManager.startScan();
                         } else {
+                            startTime = null;
                             // new method?
                             handleEndOfScanning();
                         }
@@ -165,10 +166,9 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
                             Position pos;
 
                             double degree = ((int)(Math.toDegrees((double)mOrientation[0])+ 22.5)/45)*45;
-                            pos = Algorithms.kNN(capturedMeasurementSet,(int)degree,getApplicationContext(),myDb,"First");
-                            Log.d("LocatingAct","Exited algEuclidianDistance");
+                            pos = Algorithms.kNN(capturedMeasurementSet,(int)degree,"Acasa",myDb,3);
+                            Log.d("LocatingAct","Back in locationAct from kNN");
                         }
-
                     }
                 }
         );
@@ -180,7 +180,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         if ( finePermission == true){
             nrOfScans = 0;
             startTime = SystemClock.elapsedRealtime();
-
+            capturedMeasurementSet = new HashSet<>();
             ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
             mWifiManager.startScan();
         }
