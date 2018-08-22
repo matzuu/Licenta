@@ -34,14 +34,12 @@ public class Algorithms {
 
 
 
-    public static Position kNN(HashSet<Measurement> currentMeasurementSet,Integer orientation,String cluster,DatabaseHelper myDb,Integer k){
+    public static LinkedHashMap<Position,BigDecimal> kNN(HashSet<Measurement> currentMeasurementSet,Integer orientation,String cluster,DatabaseHelper myDb,Integer k){
 
         if (currentMeasurementSet.size() < 1){
             return null;
         }
-        Log.d("ALG","Starting Algorithm EUCLIDEAN DISTANCE");
-        Position expectedPos = new Position();
-
+        Log.d("ALG","Starting Algorithm kNN");
 
         HashMap<Position,List<Measurement>> posMeasureHashMap = new HashMap<>();
         Position pos = new Position();
@@ -120,11 +118,19 @@ public class Algorithms {
         HashMap<Position,BigDecimal> posEuclidianDistance = calculateEuclideanDistance(posMeasureHashMap,currentMeasurementSet);
         Log.d("ALG","Exited calculateED");
         Log.d("ALG","Sorting the map");
-        HashMap<Position,BigDecimal> sortedMap = sortByValue(posEuclidianDistance);
-
-
+        LinkedHashMap<Position,BigDecimal> sortedMap = sortByValue(posEuclidianDistance);
+        LinkedHashMap<Position,BigDecimal> returnedMap = new LinkedHashMap<>();
+        Integer contor = 0;
+        for (LinkedHashMap.Entry<Position,BigDecimal> entry : sortedMap.entrySet()) {
+            returnedMap.put(entry.getKey(),entry.getValue());
+            contor++;
+            Log.d("ALG3","Contor: "+contor);
+            if(contor >= 10 )//de inlocuit cu k
+                break;
+        }
+        //Position expectedPos = new Position();
         Log.d("ALG","Exiting kNN");
-        return expectedPos;
+        return returnedMap;
     }
 
     public static HashMap<Position,BigDecimal> calculateEuclideanDistance(HashMap<Position,List<Measurement>> posMeasureHASHMAP, HashSet<Measurement> currentMeasurementSet){
@@ -151,10 +157,10 @@ public class Algorithms {
             }
         });
         */
-        Log.d("ALG3","currentMeasurementArr.size() - "+ currentMeasurementArr.length);
+        Log.d("Euclid Distance","currentMeasurementArr.size() - "+ currentMeasurementArr.length);
 
         for (Map.Entry<Position,List<Measurement>> entry : posMeasureHASHMAP.entrySet()){
-            Log.d("ALG","In for: Position - " + entry.getKey().toString());
+            Log.d("Euclid Distance","In for: Position - " + entry.getKey().toString());
 
 
             measurementList = entry.getValue();
@@ -166,7 +172,7 @@ public class Algorithms {
                     return object1.getBSSID().compareTo(object2.getBSSID());
                 }
             });
-            Log.d("ALG", "Array sortat: \n" );
+            //Log.d("Euclid Distance", "Array sortat: \n" );
 
             Integer[] frecvSignalForBSSID = new Integer[100];
             Arrays.fill(frecvSignalForBSSID, 0);
@@ -176,7 +182,7 @@ public class Algorithms {
 
             String currentBSSID = null;
             HashMap<String,BigDecimal> probabilityOfBSSID = new HashMap<>();
-            Log.d("ALG3","measurementList.size() - "+ measurementList.size());
+            Log.d("Euclid Distance","measurementList.size() - "+ measurementList.size());
 
 
             for (Measurement m : measurementList) {
@@ -200,9 +206,6 @@ public class Algorithms {
                                     Log.d("ALG2", "frecv SS pt BSSID-ul curent: " + (double) frecvSignalForBSSID[-currentMeasurementArr[contorM].SignalStrength]);
                                     Log.d("ALG2", "din Totalul de frecv : " + (double) sumOfElements(frecvSignalForBSSID));
                                     */
-
-
-
                                     probOfSSsForThisBSSID.add((double) frecvSignalForBSSID[-currentMeasurementArr[contorM].SignalStrength] / (double) sumOfElements(frecvSignalForBSSID));
                                 /*
                                 Cand vreau sa imi calculez cele mai apropiate pozitii am pentru fiecare adresa MAC un vector de frecventa de lung 100 in care mi-am pus intensitatile din baza de date (De exemplu daca am 30 de intensitati cu valoarea -50 atunci elementul de la indicele 50 va avea valoarea 30 daca am 10 cu valoarea -55 atunci elementul de la indicele 55 are val 10 etc.)
@@ -225,7 +228,7 @@ public class Algorithms {
 
                         //Am nevoie de map? oricum nu o sa mai folosesc CurrentBSSID dupa
                         probabilityOfBSSID.put(currentBSSID, sum.divide(new BigDecimal(probOfSSsForThisBSSID.size()),16,ROUND_HALF_EVEN));
-                        Log.d("ALG3", "probb Of BSSID: " +currentBSSID+ " = " + sum.divide(new BigDecimal(probOfSSsForThisBSSID.size()),16,ROUND_HALF_EVEN));
+                        //Log.d("Euclid Distance", "probb Of BSSID: " +currentBSSID+ " = " + sum.divide(new BigDecimal(probOfSSsForThisBSSID.size()),16,ROUND_HALF_EVEN));
 
                         //Am terminat cu acest BSSID. Golesc listele
                         probOfSSsForThisBSSID = new ArrayList<>();
@@ -246,24 +249,34 @@ public class Algorithms {
             pos = entry.getKey();
 
             //am nevoie de Map? oricum nu mai folosesc string-ul BSSID
+            //daca folosesc prod pot sa ajung la nr de peste 10*E-144;
+            /*
             BigDecimal prod = new BigDecimal(1.0);
             for (Map.Entry<String,BigDecimal> entry2 : probabilityOfBSSID.entrySet()) {
                 Log.d("ALG2","BSSID: "+entry2.getKey() +" - probOfBSSID: "+entry2.getValue().toString());
                 prod = prod.multiply(entry2.getValue());
-
             }
+
             Log.d("ALG2","\nPos Probability : \n" +pos.toString()+" \n Prod: "+prod);
             positionLikelihoodMap.put(pos,prod);
-            probabilityOfBSSID = new HashMap<>();
+            */
+            BigDecimal mean = new BigDecimal(0.0);
+            for (Map.Entry<String,BigDecimal> entry2 : probabilityOfBSSID.entrySet()) {
+                //Log.d("Euclid Distance","BSSID: "+entry2.getKey() +" - probOfBSSID: "+entry2.getValue().toString());
+                mean = mean.add(entry2.getValue());
+            }
+            mean = mean.divide(new BigDecimal(probabilityOfBSSID.size()),16,ROUND_HALF_EVEN);
+            Log.d("Euclid Distance","### Pos: "+ pos+" - meanProbability: "+mean.toString());
+            positionLikelihoodMap.put(pos,mean);
         }//out of pos for
 
         return positionLikelihoodMap;
     }
 
-    private static HashMap<Position, BigDecimal> sortByValue(Map<Position, BigDecimal> unsortMap) {
+    private static LinkedHashMap<Position, BigDecimal> sortByValue(Map<Position, BigDecimal> unsortMap) {
 
         Set<Map.Entry<Position, BigDecimal>> set = unsortMap.entrySet();
-        List<Map.Entry<Position, BigDecimal>> list = new ArrayList<Map.Entry<Position, BigDecimal>>(set);
+        List<Map.Entry<Position, BigDecimal>> list = new ArrayList<>(set);
         Collections.sort( list, new Comparator<Map.Entry<Position, BigDecimal>>()
         {
             public int compare( Map.Entry<Position, BigDecimal> o1, Map.Entry<Position, BigDecimal> o2 )
@@ -272,7 +285,7 @@ public class Algorithms {
             }
         } );
 
-        HashMap<Position,BigDecimal> sortedMap = new HashMap<>();
+        LinkedHashMap<Position,BigDecimal> sortedMap = new LinkedHashMap<>();
         for(Map.Entry<Position, BigDecimal> entry:list){
             sortedMap.put(entry.getKey(),entry.getValue());
             Log.d("ALG",entry.getKey().toString()+" ==== "+entry.getValue());

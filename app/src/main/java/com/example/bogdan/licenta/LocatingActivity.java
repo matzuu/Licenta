@@ -29,7 +29,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class LocatingActivity extends AppCompatActivity implements SensorEventListener {
@@ -163,10 +166,14 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
                         Boolean isStill = true;
                         //todo recognition  ActivityRecognitionClient de detectat daca Still / Not Walking
                         if (isStill == true){
-                            Position pos;
-
+                            LinkedHashMap<Position,BigDecimal> estimatedPos;
+                            StringBuffer strBuffer = new StringBuffer ();
                             double degree = ((int)(Math.toDegrees((double)mOrientation[0])+ 22.5)/45)*45;
-                            pos = Algorithms.kNN(capturedMeasurementSet,(int)degree,"Acasa",myDb,3);
+                            estimatedPos = Algorithms.kNN(capturedMeasurementSet,(int)degree,"Acasa",myDb,3);
+                            for (LinkedHashMap.Entry<Position,BigDecimal> entry : estimatedPos.entrySet()) {
+                                strBuffer.append("\nPos: "+ entry.getKey().toString() +"\n Probability: "+ entry.getValue().toString());
+                            }
+                            showMessage("kNN Result",strBuffer.toString());
                             Log.d("LocatingAct","Back in locationAct from kNN");
                         }
                     }

@@ -189,6 +189,10 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        if(editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editLevel.getText().toString() == null || editOrientation.getText().toString() == null){
+                            Toast.makeText(RegisterActivity.this, "All position fields must be completed", Toast.LENGTH_LONG).show();
+                            return;
+                        }
                         finePermission = false;
                         checkPermissions();
                         if ( finePermission == true){
