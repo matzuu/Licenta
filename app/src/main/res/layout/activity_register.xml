@@ -55,7 +55,7 @@
         app:srcCompat="@drawable/compass_arrow" />
 
     <Button
-        android:id="@+id/button_GetWifiInfo"
+        android:id="@+id/button_startScanning"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -192,7 +192,7 @@
         android:layout_marginStart="8dp"
         android:text="Cluster"
         android:textAppearance="@android:style/TextAppearance.Material.Large"
-        app:layout_constraintBottom_toTopOf="@+id/button_GetWifiInfo"
+        app:layout_constraintBottom_toTopOf="@+id/button_startScanning"
         app:layout_constraintStart_toStartOf="parent" />
 
     <EditText
@@ -216,6 +216,28 @@
         android:text="Acasa"
         app:layout_constraintBottom_toTopOf="@+id/button_ToMainActivity"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/button_deletePos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:text="Delete Pos"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/button_ToMainActivity"
+        app:layout_constraintStart_toEndOf="@+id/button_startScanning" />
+
+    <Button
+        android:id="@+id/button_viewMeasurementsAtPos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="View Measurements"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_wifiNr" />
 
 
 </android.support.constraint.ConstraintLayout>

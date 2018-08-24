@@ -21,6 +21,8 @@ import static java.sql.DriverManager.println;
  */
 
 public class DatabaseHelper extends SQLiteOpenHelper {
+
+    public static final String DATABASE_PATH= "data/data/com.example.bogdan.licenta/databases/";
     public static final String DATABASE_NAME = "SignalDB.db";
     public static final String TABLE_POSITION = "position_table";
     public static final String COL_1 = "ID";
@@ -45,7 +47,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COL_4 + " INTEGER , " +
                 COL_5 + " INTEGER , " +
                 COL_6 + " TEXT ) ";*/
-        Log.d("INIT","DATABASE INITIALISE");
+        Log.d("INIT", "DATABASE INITIALISE");
         String sqlPositionTable = "CREATE TABLE position_table (CoordX  REAL , CoordY  REAL, Level  INTEGER, Orientation  INTEGER,  Cluster  TEXT ," +
                 " PRIMARY KEY ( CoordX, CoordY ,Orientation, Cluster ))";
         String sqlRouterTable = "CREATE TABLE router_table ( MACAddress  TEXT PRIMARY KEY )";
@@ -60,16 +62,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 " FOREIGN KEY (ref_CoordX,ref_CoordY,ref_Orientation,ref_Cluster) REFERENCES position_table(CoordX,CoordY,Orientation,Cluster), " +
                 " FOREIGN KEY (BSSID) REFERENCES router_table(MACAddress) ) ";
         db.execSQL(sqlPositionTable);
-        Log.d("INIT","DATABASE INITIALISE POS");
+        Log.d("INIT", "DATABASE INITIALISE POS");
         db.execSQL(sqlRouterTable);
-        Log.d("INIT","DATABASE INITIALISE ROUTER");
+        Log.d("INIT", "DATABASE INITIALISE ROUTER");
         db.execSQL(sqlMeasurementsTable);
-        Log.d("INIT","DATABASE INITIALISE measurements");
+        Log.d("INIT", "DATABASE INITIALISE measurements");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS "+TABLE_POSITION);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_POSITION);
         onCreate(db);
     }
 
@@ -77,56 +79,69 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public long insertPosData(Position pos) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put(COL_2,pos.CoordX);
-        contentValues.put(COL_3,pos.CoordY);
-        contentValues.put(COL_4,pos.Level);
-        contentValues.put(COL_5,pos.Orientation);
-        contentValues.put(COL_6,pos.Cluster);
-        long rowID = db.insertWithOnConflict(TABLE_POSITION,null ,contentValues,CONFLICT_IGNORE);
+        contentValues.put(COL_2, pos.CoordX);
+        contentValues.put(COL_3, pos.CoordY);
+        contentValues.put(COL_4, pos.Level);
+        contentValues.put(COL_5, pos.Orientation);
+        contentValues.put(COL_6, pos.Cluster);
+        long rowID = db.insertWithOnConflict(TABLE_POSITION, null, contentValues, CONFLICT_IGNORE);
         return rowID;
     }
+
     //INSERT ROUTER
-    public long insertRouterData(HashSet<String> macAddressSet){
+    public long insertRouterData(HashSet<String> macAddressSet) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues;
-        Log.d("INSEERT","macAddressSet size: "+macAddressSet.size());
+        Log.d("INSEERT", "macAddressSet size: " + macAddressSet.size());
         long rowID = -2;
         db.beginTransaction();
-        for(String s: macAddressSet){
+        for (String s : macAddressSet) {
             contentValues = new ContentValues();
-            contentValues.put("MACAddress",s);
-            Log.d("INSEERT","In macAddress value \n macAddress: "+s);
-            rowID = db.insertWithOnConflict(TABLE_ROUTER,null ,contentValues,CONFLICT_IGNORE);
+            contentValues.put("MACAddress", s);
+            Log.d("INSEERT", "In macAddress value \n macAddress: " + s);
+            rowID = db.insertWithOnConflict(TABLE_ROUTER, null, contentValues, CONFLICT_IGNORE);
         }
         db.setTransactionSuccessful();
         db.endTransaction();
         //Log.d("INSEERT","NR ContentValues: "+ contentValues.size());
         return rowID;
     }
+
     //INSERT SIGNAL STR
-    public long insertMeasurementData(HashSet<Measurement> measurementHashSet){
+    public long insertMeasurementData(HashSet<Measurement> measurementHashSet) {
         SQLiteDatabase db = this.getWritableDatabase();
-        Log.d("INSEERT","measurementSet size: "+measurementHashSet.size());
+        Log.d("INSEERT", "insertMeasurementData SetSize: " + measurementHashSet.size());
         ContentValues contentValues;
         long rowID = -2;
 
-        db.beginTransaction();
-        for(Measurement m: measurementHashSet){
-            Log.d("INSEERT","In SigStr value \n Pos_ID: "+m.ref_CoordX+" "+m.ref_CoordY+" "+m.ref_Orientation+" "+m.ref_Cluster
-                    + " \n BSSID: "+m.BSSID
-                    + " \n SignStr: "+m.SignalStrength);
-            contentValues = new ContentValues();
-            contentValues.put("ref_CoordX",m.ref_CoordX);
-            contentValues.put("ref_CoordY",m.ref_CoordY);
-            contentValues.put("ref_Orientation",m.ref_Orientation);
-            contentValues.put("ref_Cluster",m.ref_Cluster);
-            contentValues.put("BSSID",m.BSSID);
-            contentValues.put("SignalStrength",m.SignalStrength);
-            rowID = db.insertWithOnConflict(TABLE_MEASUREMENTS,null ,contentValues,CONFLICT_IGNORE);
+        try {
+            db.beginTransaction();
+            Integer contor = 0;
+            for (Measurement m : measurementHashSet) {
+                /*Log.d("INSEERT", "In SigStr value \n Pos_ID: " + m.ref_CoordX + " " + m.ref_CoordY + " " + m.ref_Orientation + " " + m.ref_Cluster
+                        + " \n BSSID: " + m.BSSID
+                        + " \n SignStr: " + m.SignalStrength);
+                        */
+                Log.d("INSEERT","insertMeasurementData measurement nr: "+contor);
+                contor++;
+                contentValues = new ContentValues();
+                contentValues.put("ref_CoordX", m.ref_CoordX);
+                contentValues.put("ref_CoordY", m.ref_CoordY);
+                contentValues.put("ref_Orientation", m.ref_Orientation);
+                contentValues.put("ref_Cluster", m.ref_Cluster);
+                contentValues.put("BSSID", m.BSSID);
+                contentValues.put("SignalStrength", m.SignalStrength);
+                rowID = db.insertOrThrow(TABLE_MEASUREMENTS, null, contentValues);
+                //rowID = db.insertWithOnConflict(TABLE_MEASUREMENTS, null, contentValues, CONFLICT_IGNORE);
+            }
+            Log.d("INSEERT", "Insert MeasurementData returned rowID: " + rowID);
+            db.setTransactionSuccessful();
+            db.endTransaction();
+            //Log.d("INSEERT","NR ContentValues: "+ contentValues.size());
         }
-        db.setTransactionSuccessful();
-        db.endTransaction();
-        //Log.d("INSEERT","NR ContentValues: "+ contentValues.size());
+        catch (Exception e){
+            Log.d("INSEERT","Caught Exception in insertMeasurementData: \n"+ e);
+        }
 
         return rowID;
     }
@@ -182,13 +197,33 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public Cursor getAllData(String tableName) {
         SQLiteDatabase db = this.getWritableDatabase();
-        Cursor res = db.rawQuery("select * from "+tableName,null);
+        Cursor res = db.rawQuery("select * from " + tableName, null);
         return res;
     }
 
-    public Cursor queryPosition(Position p){
+    public Cursor getAllPosFromCluster(String clusterName) {
 
-        String[] tableColumns = new String[] {
+        String[] tableColumns = new String[]{
+                "rowid",
+                "CoordX",
+                "CoordY",
+                "Orientation",
+                "Cluster"
+
+        };
+        String whereClause = "Cluster = ?";
+        String[] whereArgs = new String[]{clusterName};
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor res = db.query(TABLE_POSITION, tableColumns, whereClause, whereArgs, null, null, null);
+
+        return res;
+    }
+
+
+    public Cursor queryPosition(Position p) {
+
+        String[] tableColumns = new String[]{
                 "rowid",
                 "CoordX",
                 "CoordY",
@@ -205,14 +240,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         };
 
         SQLiteDatabase db = this.getWritableDatabase();
-        Cursor res = db.query(TABLE_POSITION,tableColumns,whereClause,whereArgs,null,null,null);
+        Cursor res = db.query(TABLE_POSITION, tableColumns, whereClause, whereArgs, null, null, null);
+        Log.d("QUERY","Queried "+ res.getCount()+" positions ");
 
         return res;
     }
 
-    public Cursor queryAllPositionsFromCluster(String[] clusterName){
+    public Cursor queryAllPositionsFromCluster(String clusterName) {
 
-        String[] tableColumns = new String[] {
+        String[] tableColumns = new String[]{
                 "rowid",
                 "CoordX",
                 "CoordY",
@@ -221,24 +257,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         };
         String whereClause = "Cluster = ?";
-        String[] whereArgs = clusterName;
+        String[] whereArgs = new String[]{clusterName};
 
         SQLiteDatabase db = this.getWritableDatabase();
-        Cursor res = db.query(TABLE_POSITION,tableColumns,whereClause,whereArgs,null,null,null);
+        Cursor res = db.query(TABLE_POSITION, tableColumns, whereClause, whereArgs, null, null, null);
 
         return res;
     }
 
-    public Cursor queryClustersFromBSSID(HashSet<String> SetBSSID){
+    public Cursor queryClustersFromBSSID(HashSet<String> SetBSSID) {
 
         String[] whereArgs = (String[]) SetBSSID.toArray(new String[SetBSSID.size()]);
         String inClause = whereArgs.toString();
 
         String MY_QUERY = "SELECT Cluster " +
-                "FROM "+ TABLE_POSITION +" p " +
-                "JOIN "+ TABLE_MEASUREMENTS +" m " +
+                "FROM " + TABLE_POSITION + " p " +
+                "JOIN " + TABLE_MEASUREMENTS + " m " +
                 "ON p.CoordX=s.ref_CoordX AND p.CoordY=s.ref_CoordY AND p.Orientation=m.ref_Orientation AND p.Cluster = m.ref_Cluster" +
-                "WHERE m.BSSID in " + inClause ;
+                "WHERE m.BSSID in " + inClause;
 
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor res = db.rawQuery(MY_QUERY, null);
@@ -246,15 +282,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return res;
     }
 
-    public Cursor queryAllPositionsFromBSSID(HashSet<String> SetBSSID){
+    public Cursor queryAllPositionsFromBSSID(HashSet<String> SetBSSID) {
         String[] whereArgs = (String[]) SetBSSID.toArray(new String[SetBSSID.size()]);
         String inClause = whereArgs.toString();
 
-        String MY_QUERY = "SELECT "+TABLE_POSITION+".* , "+TABLE_MEASUREMENTS+".SignalStrength , "+TABLE_MEASUREMENTS+".BSSID " +
-                "FROM "+ TABLE_POSITION +" p " +
-                "JOIN "+ TABLE_MEASUREMENTS +" m " +
+        String MY_QUERY = "SELECT " + TABLE_POSITION + ".* , " + TABLE_MEASUREMENTS + ".SignalStrength , " + TABLE_MEASUREMENTS + ".BSSID " +
+                "FROM " + TABLE_POSITION + " p " +
+                "JOIN " + TABLE_MEASUREMENTS + " m " +
                 "ON p.CoordX=s.ref_CoordX AND p.CoordY=m.ref_CoordY AND p.Orientation=m.ref_Orientation AND p.Cluster = m.ref_Cluster" +
-                "WHERE m.BSSID in " + inClause ;
+                "WHERE m.BSSID in " + inClause;
 
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor res = db.rawQuery(MY_QUERY, null);
@@ -262,16 +298,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return res;
     }
 
-    public Cursor queryAllPositionsAndMeasurementsFromBSSIDandCluster(HashSet<String> SetBSSID,String clusterName){
-        String[] whereArgs = SetBSSID.toArray(new String[SetBSSID.size()+1]);
+    public Cursor queryAllPositionsAndMeasurementsFromBSSIDandCluster(HashSet<String> SetBSSID, String clusterName) {
+        String[] whereArgs = SetBSSID.toArray(new String[SetBSSID.size() + 1]);
         whereArgs[SetBSSID.size()] = clusterName;
         String inClause = whereArgs.toString();
 
-        String MY_QUERY = "SELECT "+TABLE_POSITION+".* , "+TABLE_MEASUREMENTS+".ID , "+TABLE_MEASUREMENTS+".SignalStrength , "+TABLE_MEASUREMENTS+".BSSID " +
-                " FROM "+ TABLE_POSITION  +
-                " JOIN "+ TABLE_MEASUREMENTS  +
+        String MY_QUERY = "SELECT " + TABLE_POSITION + ".* , " + TABLE_MEASUREMENTS + ".ID , " + TABLE_MEASUREMENTS + ".SignalStrength , " + TABLE_MEASUREMENTS + ".BSSID " +
+                " FROM " + TABLE_POSITION +
+                " JOIN " + TABLE_MEASUREMENTS +
                 " ON CoordX = ref_CoordX AND CoordY = ref_CoordY AND Orientation = ref_Orientation AND Cluster = ref_Cluster" +
-                " WHERE BSSID in (" + makeQuestionmarks(SetBSSID.size())+ ") AND Cluster = ? " +
+                " WHERE BSSID in (" + makeQuestionmarks(SetBSSID.size()) + ") AND Cluster = ? " +
                 " ORDER BY CoordX ASC , CoordY ASC , Orientation ASC ";
 
 
@@ -283,9 +319,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     }
 
-    public Cursor queryAllMeasurementsFromBSSID(HashSet<String> SetBSSID){
-
-        String[] tableColumns = new String[] {
+    public Cursor queryAllMeasurementsFromPosition(String coordX, String coordY, String orientation, String cluster){
+        String[] tableColumns = new String[]{
                 "ID",
                 "ref_CoordX",
                 "ref_CoordY",
@@ -294,11 +329,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "BSSID",
                 "SignalStrength"
         };
-        String whereClause = "BSSID IN ("+ makeQuestionmarks(SetBSSID.size()) +")";
-        String[] whereArgs = SetBSSID.toArray(new String[SetBSSID.size()]);
-        Log.d ("QUERY","whereArgs: "+ whereArgs);
+        String whereClause = "ref_CoordX = ? AND ref_CoordY = ? AND ref_Orientation = ? AND ref_Cluster = ?";
+        String[] whereArgs = new String[]{coordX,coordY,orientation,cluster};
+        Log.d("QUERY", "whereArgs: " + coordX +" "+ coordY +" "+ orientation +" "+ cluster);
         SQLiteDatabase db = this.getWritableDatabase();
-        Cursor res = db.query(TABLE_MEASUREMENTS,tableColumns,whereClause,whereArgs,null,null,null);
+        Cursor res = db.query(TABLE_MEASUREMENTS, tableColumns, whereClause, whereArgs, null, null, null);
+        return res;
+
+    }
+
+    public Cursor queryAllMeasurementsFromBSSID(HashSet<String> SetBSSID) {
+
+        String[] tableColumns = new String[]{
+                "ID",
+                "ref_CoordX",
+                "ref_CoordY",
+                "ref_Orientation",
+                "ref_Cluster",
+                "BSSID",
+                "SignalStrength"
+        };
+        String whereClause = "BSSID IN (" + makeQuestionmarks(SetBSSID.size()) + ")";
+        String[] whereArgs = SetBSSID.toArray(new String[SetBSSID.size()]);
+        Log.d("QUERY", "whereArgs: " + whereArgs);
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor res = db.query(TABLE_MEASUREMENTS, tableColumns, whereClause, whereArgs, null, null, null);
 
         return res;
     }
@@ -317,35 +372,41 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public long getMeasurementCount(){
-        return DatabaseUtils.queryNumEntries(this.getWritableDatabase(),TABLE_MEASUREMENTS,null);
+    public long getMeasurementCount() {
+        return DatabaseUtils.queryNumEntries(this.getWritableDatabase(), TABLE_MEASUREMENTS, null);
     }
 
-
-
     //UPDATE
-    public boolean updatePosData(String id,Double coordX,Double coordY,Integer level,Integer orientation,String cluster) {
+    public boolean updatePosData(String id, Double coordX, Double coordY, Integer level, Integer orientation, String cluster) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put(COL_2,coordX);
-        contentValues.put(COL_3,coordY);
-        contentValues.put(COL_4,level);
-        contentValues.put(COL_5,orientation);
-        contentValues.put(COL_6,cluster);
+        contentValues.put(COL_2, coordX);
+        contentValues.put(COL_3, coordY);
+        contentValues.put(COL_4, level);
+        contentValues.put(COL_5, orientation);
+        contentValues.put(COL_6, cluster);
         db.update(TABLE_POSITION,
                 contentValues,
-                 COL_2 + " = ? AND " + COL_3 + " = ? AND " + COL_6 + " = ?",
-                new String[]{coordX.toString(),coordY.toString(),cluster});
+                COL_2 + " = ? AND " + COL_3 + " = ? AND " + COL_6 + " = ?",
+                new String[]{coordX.toString(), coordY.toString(), cluster});
         return true;
     }
 
     //DELETE
-    public Integer deleteData (String id) {
+    public Integer deleteData(String id) {
         SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete(TABLE_POSITION, COL_1+" = "+id,null);
-        }
+        return db.delete(TABLE_POSITION, COL_1 + " = " + id, null);
+    }
 
 
+    public Integer deleteMeasurementAtPosData(String coordX, String coordY, String orientation, String cluster) {
 
+        String[] whereArgs = new String[]{coordX,coordY,orientation,cluster};
+        Log.d("DELETE", "whereArgs: " + whereArgs);
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete(TABLE_MEASUREMENTS, "ref_CoordX = ? AND ref_CoordY = ? AND ref_Orientation = ? AND ref_Cluster = ? ",whereArgs);
 
     }
+}
+
+

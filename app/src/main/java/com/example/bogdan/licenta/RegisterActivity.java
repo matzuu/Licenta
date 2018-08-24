@@ -13,7 +13,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
-import android.os.PowerManager;
+import android.os.AsyncTask;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -33,6 +33,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.net.NetworkInterface;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -40,7 +42,9 @@ import java.util.List;
 public class RegisterActivity extends AppCompatActivity implements SensorEventListener {
 
     Button btnMainActivity;
-    Button btnGetWifiInfo;
+    Button btnStartScanning;
+    Button btnDeletePos;
+    Button btnViewMeasurements;
     TextView textViewCompass;
     TextView textViewCompass2;
     TextView textViewCompass3;
@@ -81,7 +85,9 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         myDb = new DatabaseHelper(this);
 
         btnMainActivity = (Button) findViewById(R.id.button_ToMainActivity);
-        btnGetWifiInfo = (Button) findViewById(R.id.button_GetWifiInfo);
+        btnStartScanning = (Button) findViewById(R.id.button_startScanning);
+        btnDeletePos = findViewById(R.id.button_deletePos);
+        btnViewMeasurements = findViewById(R.id.button_viewMeasurementsAtPos);
         textViewCompass = findViewById(R.id.textView_CompassDegrees);
         textViewCompass2 = findViewById(R.id.textView_CompassDegrees2);
         textViewCompass3 = findViewById(R.id.textView_CompassDegrees3);
@@ -112,13 +118,13 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
             @Override
             public void onReceive(Context c, Intent intent) {
 
-                if(startTime != null && nrOfScans!= null) {
+                if(startTime != null && nrOfScans!= null && lastPos != null) {
                     capturedMeasurementSet.addAll(getScanResultInfo());
                     timeDifference = SystemClock.elapsedRealtime() - startTime;
                     textWifiInfo.setText("Seconds elapsed: "+Double.toString(timeDifference /1000.0));
                     nrOfScans++;
 
-                    if (nrOfScans < 100) {
+                    if (nrOfScans <= 100) {
                         mWifiManager.startScan();
                     } else {
                         nrOfScans = null;
@@ -127,15 +133,16 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                         if (lastPos!= null && lastPos.CoordX != null && lastPos.CoordY!=null && lastPos.Orientation != null && lastPos.Cluster != null){
                             handleEndOfScanning();
                         }
-
                     }
                 }
             }
         };
 
 
-        getWifiInfo();
+        startWifiScan();
         toMainActivity();
+        deletePos();
+        viewMeasurementsOfPos();
 
     }
 
@@ -148,6 +155,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL);
         registerReceiver(mWifiReceiver,new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        mWifiManager.startScan();
     }
 
     @Override
@@ -156,36 +164,66 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         mSensorManager.unregisterListener(this);
         unregisterReceiver(mWifiReceiver);
     }
+    // ASYNC TASK ///////////////////
+
+    private class InsertDataTask extends AsyncTask<HashSet<Measurement>,String,List<String>> {
+
+        protected List<String> doInBackground(HashSet<Measurement>... vMeasurements) {
+
+            int count = vMeasurements.length;
+            List<String> resultStr = new ArrayList<>();
+            int contor;
+            for (int i = 0; i < count; i++) {
+                contor = 0;
+                capturedMeasurementSet = vMeasurements[i];
+                HashSet<String> macAddressSet = new HashSet<>();
+                for (Measurement m : capturedMeasurementSet) {
+                    macAddressSet.add(m.BSSID);
+                    m.ref_CoordX = lastPos.CoordX;
+                    m.ref_CoordY = lastPos.CoordY;
+                    m.ref_Orientation = lastPos.Orientation;
+                    m.ref_Cluster = lastPos.Cluster;
+
+                    resultStr.add("POS_KEY :" +
+                            m.ref_CoordX + " " +
+                            m.ref_CoordY + " " +
+                            m.ref_Orientation + " " +
+                            m.ref_Cluster + " \n" +
+                            "BSSID :" + m.BSSID + "\n " +
+                            "Signal Str :" + m.SignalStrength + "\n\n");
+
+                    contor++;
+                    publishProgress("Measurement " + contor + " / " + capturedMeasurementSet.size());
+
+                }
+                myDb.insertRouterData(macAddressSet);
+                myDb.insertMeasurementData(capturedMeasurementSet);
+            }
+            return resultStr;
+        }
+        protected void onProgressUpdate(String... progress){
+            Log.d("Thread",progress[0]);
+        }
+        protected void onPostExecute(List<String> result) {
+            StringBuffer buffer = new StringBuffer();
+            for(String s:result){
+                buffer.append(s);
+            }
+            showMessage("Captured Data: " + result.size(), buffer.toString());
+
+        }
+    }
 
     // WIFI ////////////
-    public void handleEndOfScanning (){
+    public void handleEndOfScanning() {
 
-        HashSet<String> macAddressSet = new HashSet<>();
-
-        StringBuffer buffer = new StringBuffer();
-        int size = 0;
-        for (Measurement s : capturedMeasurementSet) {
-            macAddressSet.add(s.BSSID);
-            s.ref_CoordX = lastPos.CoordX;
-            s.ref_CoordY = lastPos.CoordY;
-            s.ref_Orientation = lastPos.Orientation;
-            s.ref_Cluster = lastPos.Cluster;
-            buffer.append("POS_KEY :" + s.ref_CoordX+" "+s.ref_CoordY +" "+s.ref_Orientation +" "+s.ref_Cluster +" "+ "\n");
-            buffer.append("BSSID :" + s.BSSID + "\n");
-            buffer.append("Signal Str :" + s.SignalStrength + "\n\n");
-            size++;
-        }
-        showMessage("Captured Data: "+size, buffer.toString());
-
-        myDb.insertRouterData(macAddressSet);
-        myDb.insertMeasurementData(capturedMeasurementSet);
-        capturedMeasurementSet = new HashSet<>();
+        new InsertDataTask().execute(capturedMeasurementSet);
 
 
     }
 
-    public void getWifiInfo(){
-        btnGetWifiInfo.setOnClickListener(
+    public void startWifiScan(){
+        btnStartScanning.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -234,9 +272,6 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                                     mWifiManager.startScan();
                                 }
                             }
-
-
-
                         }
                         else {
                             Log.d("WIFI","### Missing Permissions: "+finePermission);
@@ -251,6 +286,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         HashSet<Measurement> retList = new HashSet<>();
         //textWifiInfo.setText("");
         List<ScanResult> wifiScanList = mWifiManager.getScanResults();
+        Log.d("WIFI","nrOfScans: "+nrOfScans);
         Log.d("WIFI","initializat ScanResult List: "+ wifiScanList.size());
         textWifiNr.setText("Nr of detected APs: "+ wifiScanList.size());
         for (ScanResult scanResult : wifiScanList) {
@@ -379,6 +415,59 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
             editOrientation.setText(Integer.toString(degreeToInsert));
         }
     }
+
+    public void deletePos(){
+        btnDeletePos.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editLevel.getText().toString() == null || editOrientation.getText().toString() == null) {
+                            Toast.makeText(RegisterActivity.this, "All position fields must be completed", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        Integer rowsDeleted = myDb.deleteMeasurementAtPosData(editCoordX.getText().toString(),editCoordY.getText().toString(),editLevel.getText().toString(),editOrientation.getText().toString() );
+                        Toast.makeText(RegisterActivity.this, "Deleted "+rowsDeleted+" measurements", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                });
+    }
+
+    public void viewMeasurementsOfPos(){
+        btnViewMeasurements.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editLevel.getText().toString() == null || editOrientation.getText().toString() == null) {
+                            Toast.makeText(RegisterActivity.this, "All position fields must be completed", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        Cursor res = myDb.queryAllMeasurementsFromPosition(editCoordX.getText().toString(),editCoordY.getText().toString(),editLevel.getText().toString(),editOrientation.getText().toString());
+                        if (res == null || res.getCount() == 0) {
+                            // show message
+                            showMessage("Error", "Nothing found");
+                            return;
+                        }
+
+                        StringBuffer buffer = new StringBuffer();
+                        while (res.moveToNext()) {
+                            //buffer.append("Id :" + res.getString(0) + "\n");
+                            buffer.append("CoordX :" + res.getString(0) + "\n");
+                            buffer.append("CoordY :" + res.getString(1) + "\n");
+                            buffer.append("Orientation :" + res.getString(2) + "\n");
+                            buffer.append("Cluster :" + res.getString(3) + "\n");
+                            buffer.append("BSSID :" + res.getString(4) + "\n");
+                            buffer.append("SigStr :" + res.getString(5) + "\n\n");
+                        }
+
+                        // Show all data
+                        showMessage("Measurements: ", buffer.toString());
+                    }
+                }
+        );
+
+
+    }
+
 
     public void showMessage(String title, String Message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);

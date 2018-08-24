@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -37,15 +38,12 @@ public class FileHelper extends Thread{
             InputStreamReader inputStreamReader = new InputStreamReader(context.getAssets().open("crawdadOffileTraceTest"));
             BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
             //StringBuilder stringBuilder = new StringBuilder();
-
             while ( (line = bufferedReader.readLine()) != null )
             {
                 //stringBuilder.append(line + System.getProperty("line.separator"));
                 rezList.add(line);
             }
             //fileInputStream.close();
-
-
             bufferedReader.close();
         }
         catch(FileNotFoundException ex) {
@@ -241,6 +239,22 @@ public class FileHelper extends Thread{
         //Router Sgl Str
         retValue = true;
         return retValue;
+    }
+
+    public static boolean writeFile(List<String> stringList,Context context){
+        try {
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("dateAndroidOut.txt", Context.MODE_PRIVATE));
+            outputStreamWriter.write("# dateOutAndroid\r\n");
+            for(String s : stringList) {
+                outputStreamWriter.append(s);
+            }
+            outputStreamWriter.close();
+        }
+        catch (IOException e) {
+            Log.e("Exception", "File write failed: " + e.toString());
+            return false;
+        }
+        return true;
     }
 
 
