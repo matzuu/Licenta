@@ -18,6 +18,14 @@ public class Position {
         Cluster=null;
     }
 
+    public Position(Double coordX,Double coordY,Integer orientation,String cluster) {
+        CoordX=coordX;
+        CoordY=coordY;
+        Level=0;
+        Orientation=orientation;
+        Cluster=cluster;
+    }
+
     public Position(Double coordX,Double coordY,Integer level,Integer orientation,String cluster) {
         CoordX=coordX;
         CoordY=coordY;

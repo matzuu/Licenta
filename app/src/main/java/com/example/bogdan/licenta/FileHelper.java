@@ -7,7 +7,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -30,20 +29,16 @@ public class FileHelper extends Thread{
 
 
 
-    public static List<String> ReadFile(Context context){
-        String line = null;
+    public static List<String> readFile(Context context){
+        String line;
         List<String> rezList = new ArrayList<>();
         try {
-            //FileInputStream fileInputStream = new FileInputStream (new File(path,filename));
-            InputStreamReader inputStreamReader = new InputStreamReader(context.getAssets().open("crawdadOffileTraceTest"));
+            InputStreamReader inputStreamReader = new InputStreamReader(context.getAssets().open("crawdadOfflineTraceTest"));
             BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-            //StringBuilder stringBuilder = new StringBuilder();
             while ( (line = bufferedReader.readLine()) != null )
             {
-                //stringBuilder.append(line + System.getProperty("line.separator"));
                 rezList.add(line);
             }
-            //fileInputStream.close();
             bufferedReader.close();
         }
         catch(FileNotFoundException ex) {
@@ -52,8 +47,6 @@ public class FileHelper extends Thread{
         catch(IOException ex) {
             Log.d("IOException", ex.getMessage());
         }
-        //return line;
-        //Log.d("READLIST",rezList.toString());
         return rezList;
     }
 
@@ -89,28 +82,7 @@ public class FileHelper extends Thread{
         return line;
     }
 
-    public static boolean saveToFile( String data){
-        try {
-            new File(path  ).mkdir();
-            File file = new File(path);
-            if (!file.exists()) {
-                file.createNewFile();
-            }
-            FileOutputStream fileOutputStream = new FileOutputStream(file,true);
-            fileOutputStream.write((data + System.getProperty("line.separator")).getBytes());
-
-            return true;
-        }  catch(FileNotFoundException ex) {
-            Log.d(TAG, ex.getMessage());
-        }  catch(IOException ex) {
-            Log.d(TAG, ex.getMessage());
-        }
-        return  false;
-
-
-    }
-
-    public static List<String> CleanString (List<String> inputList){
+    public static List<String> removeComments(List<String> inputList){
         //String line;
         String aux;
         List<String> outputList = new ArrayList<>();
@@ -124,35 +96,37 @@ public class FileHelper extends Thread{
             {
                 inputList.remove(nrLinie+0);
             }
-
         }
 
-
-        List<Measurement> measurementsList = new ArrayList<>();
+        //List<Measurement> measurementsList = new ArrayList<>();
         Log.d("READLINE","Size of inputList After "+String.valueOf(inputList.size()));
+
+        /* Redundat, oricum folosesc regex mai tarziu
         Log.d("READLINE", "First row before cleanup: "+inputList.get(0));
         StringBuilder sb;
         for (Integer nrLinie = 0;nrLinie < inputList.size();nrLinie++) {
             //curat string-ul
             sb = new StringBuilder(inputList.get(nrLinie));
             sb.delete(28,52);
-            sb.delete(0,20);
+            sb.delete(0,40);
             outputList.add(sb.toString());
 
         }
         Log.d("READLINE", "First row partially cleaned: "+outputList.get(0));
+        */
 
         // \d\.\d,
         // \w{2}:\w{2}:\w{2}:\w{2}:\w{2}:\w{2} Mac address
         // =-\d{2}
-        return outputList;
+        return inputList;
     }
 
     public static boolean parseString (List<String> stringList,DatabaseHelper myDb) {
         Matcher mPos;
         Position pos = new Position();
-        Double coordx = null;
-        Double coordy = null;
+        Double coordx;
+        Double coordy;
+        Double orientation;
         Matcher mMacAddress;
         HashSet<String> macAddressSet = new HashSet<>();
         String macAddressAux;
@@ -182,13 +156,23 @@ public class FileHelper extends Thread{
                 Log.d("parseString", "INCERC COORDX " + aux);
                 coordx = Double.parseDouble(aux);
             }
-
-
             if (mPos.find()) {
                 aux = mPos.group();
                 aux = aux.substring(0, aux.length() - 1);
                 coordy = Double.parseDouble(aux);
             }
+
+            mPos = Pattern.compile("degree=\\d.\\d").matcher(line);
+            orientation=null;
+            if (mPos.find()){
+                aux = mPos.group();
+                aux = aux.substring(7,aux.length());
+                orientation = Double.parseDouble(aux);
+                orientation =  Math.floor((orientation)/45.0)*45;
+                if (orientation == -180)
+                    orientation = 180.0;
+            }
+
 
             //ma asigur ca pe fiecare linie gasesc doua Double de pozitie.. in caz contrar ignor linia;
             if (coordx != null && coordy != null) {
@@ -196,8 +180,9 @@ public class FileHelper extends Thread{
                     pos.CoordX = coordy;
                     pos.CoordY = coordy;
                     pos.Level = 0;
-                    pos.Orientation = 0;
+                    pos.Orientation = orientation.intValue();
                     pos.Cluster = "crawDad";
+                    Log.d("parseString","inserting position: "+pos.toString());
                     lastPosID = myDb.insertPosData(pos);
 
                 }

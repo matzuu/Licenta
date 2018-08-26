@@ -182,17 +182,22 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
     }
 
     public void startWifiScanning(){
-        finePermission = false;
-        checkPermissions();
-        if ( finePermission == true){
-            nrOfScans = 0;
-            startTime = SystemClock.elapsedRealtime();
-            capturedMeasurementSet = new HashSet<>();
-            ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
-            mWifiManager.startScan();
+        if(checkForIncompletedTexts()){
+            Toast.makeText(LocatingActivity.this, "All position fields must be completed", Toast.LENGTH_LONG).show();
+            return;
         }
         else {
-            Log.d("WIFI","### Missing Permissions: "+finePermission);
+            finePermission = false;
+            checkPermissions();
+            if (finePermission == true) {
+                nrOfScans = 0;
+                startTime = SystemClock.elapsedRealtime();
+                capturedMeasurementSet = new HashSet<>();
+                ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
+                mWifiManager.startScan();
+            } else {
+                Log.d("WIFI", "### Missing Permissions: " + finePermission);
+            }
         }
 
     }
@@ -338,6 +343,13 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
                     }
                 }
         );
+    }
+
+    public boolean checkForIncompletedTexts (){
+        boolean res = editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editLevel.getText().toString() == null || editOrientation.getText().toString() == null || editCluster.getText().toString() == null ||
+                editCoordX.getText().toString().compareTo("")==0 || editCoordY.getText().toString().compareTo("")==0 || editLevel.getText().toString().compareTo("")==0 || editOrientation.getText().toString().compareTo("")==0 || editCluster.getText().toString().compareTo("")==0;
+        Log.d("Locating","checkForCompletedTexts result: "+res);
+        return res;
     }
 
     public void showMessage(String title, String Message) {

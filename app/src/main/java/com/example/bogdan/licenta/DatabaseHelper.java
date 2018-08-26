@@ -22,7 +22,7 @@ import static java.sql.DriverManager.println;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
-    public static final String DATABASE_PATH= "data/data/com.example.bogdan.licenta/databases/";
+    //public static final String DATABASE_PATH= "data/data/com.example.bogdan.licenta/databases/";
     public static final String DATABASE_NAME = "SignalDB.db";
     public static final String TABLE_POSITION = "position_table";
     public static final String COL_1 = "ID";
@@ -315,11 +315,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor res = db.rawQuery(MY_QUERY, whereArgs);
 
         return res;
-
-
     }
 
-    public Cursor queryAllMeasurementsFromPosition(String coordX, String coordY, String orientation, String cluster){
+    public Cursor queryAllMeasurementsFromPosition(Position p){
         String[] tableColumns = new String[]{
                 "ID",
                 "ref_CoordX",
@@ -330,8 +328,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "SignalStrength"
         };
         String whereClause = "ref_CoordX = ? AND ref_CoordY = ? AND ref_Orientation = ? AND ref_Cluster = ?";
-        String[] whereArgs = new String[]{coordX,coordY,orientation,cluster};
-        Log.d("QUERY", "whereArgs: " + coordX +" "+ coordY +" "+ orientation +" "+ cluster);
+        String[] whereArgs = new String[]{p.CoordX.toString(),p.CoordY.toString(),p.Orientation.toString(),p.Cluster};
+        Log.d("QUERY", "queryAllMeasurementsFromPosition whereArgs: " + whereArgs[0] + " " + whereArgs[1] +" " + whereArgs[2] +" " + whereArgs[3]);
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor res = db.query(TABLE_MEASUREMENTS, tableColumns, whereClause, whereArgs, null, null, null);
         return res;
@@ -399,10 +397,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
-    public Integer deleteMeasurementAtPosData(String coordX, String coordY, String orientation, String cluster) {
+    public Integer deleteMeasurementAtPosData(Position p) {
 
-        String[] whereArgs = new String[]{coordX,coordY,orientation,cluster};
-        Log.d("DELETE", "whereArgs: " + whereArgs);
+        String[] whereArgs = new String[]{p.CoordX.toString(),p.CoordY.toString(),p.Orientation.toString(),p.Cluster};
+        Log.d("QUERY", "deleteMeasurementAtPosData whereArgs: " + whereArgs[0] + " " + whereArgs[1] +" " + whereArgs[2] +" " + whereArgs[3]);
         SQLiteDatabase db = this.getWritableDatabase();
         return db.delete(TABLE_MEASUREMENTS, "ref_CoordX = ? AND ref_CoordY = ? AND ref_Orientation = ? AND ref_Cluster = ? ",whereArgs);
 

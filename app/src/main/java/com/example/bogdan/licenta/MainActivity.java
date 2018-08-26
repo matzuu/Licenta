@@ -10,7 +10,6 @@ import android.view.View;
 import android.widget.Button;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 import static com.example.bogdan.licenta.DatabaseHelper.TABLE_MEASUREMENTS;
@@ -62,10 +61,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         Log.d("READ", "Precitire");
-                        List<String> stringList = FileHelper.ReadFile(MainActivity.this);
-                        Log.d("READ", "Curatare");
-                        stringList = FileHelper.CleanString(stringList);
+                        List<String> stringList = FileHelper.readFile(MainActivity.this);
+                        Log.d("READ", "Sterg Comment: "+stringList.size());
+                        stringList = FileHelper.removeComments(stringList);
                         boolean ok;
+                        Log.d("READ","Curat Stringul: "+stringList.size());
                         ok = FileHelper.parseString(stringList, myDb);
                         Log.d("READ", "FINISH PARSESTRING: " + ok);
 

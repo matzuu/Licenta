@@ -50,6 +50,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
     TextView textViewCompass3;
     TextView textWifiInfo;
     TextView textWifiNr;
+    TextView textViewTest;
     ImageView imgViewCompass;
     EditText editCoordX, editCoordY, editLevel, editPosID,editOrientation,editCluster;
 
@@ -65,7 +66,9 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
     DatabaseHelper myDb;
     Position lastPos;
     Integer nrOfScans;
-    StringBuffer capturedDatabuffer;
+    Integer contor1;
+    Integer contor2;
+    //StringBuffer capturedDatabuffer;
     HashSet<Measurement> capturedMeasurementSet;
 
 
@@ -100,38 +103,46 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         editOrientation = (EditText) findViewById(R.id.editText_Orientation);
         editCluster = (EditText) findViewById(R.id.editText_Cluster);
 
-        capturedDatabuffer = new StringBuffer();
-        capturedDatabuffer.append("N/A");
+        textViewTest = findViewById(R.id.textView_test);
+
+        //capturedDatabuffer = new StringBuffer();
+        //capturedDatabuffer.append("N/A");
         capturedMeasurementSet = new HashSet<>();
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
+        contor1 = 0;
+        contor2 = 0;
+
+
+
 
 
         mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
         mWifiReceiver = new BroadcastReceiver() {
-
-
 
             @Override
             public void onReceive(Context c, Intent intent) {
+                if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
+                    if (startTime != null && nrOfScans != null && lastPos != null) {
+                        capturedMeasurementSet.addAll(getScanResultInfo());
+                        timeDifference = SystemClock.elapsedRealtime() - startTime;
+                        textWifiInfo.setText("Seconds elapsed: " + Double.toString(timeDifference / 1000.0));
+                        nrOfScans++;
+                        contor1++;
 
-                if(startTime != null && nrOfScans!= null && lastPos != null) {
-                    capturedMeasurementSet.addAll(getScanResultInfo());
-                    timeDifference = SystemClock.elapsedRealtime() - startTime;
-                    textWifiInfo.setText("Seconds elapsed: "+Double.toString(timeDifference /1000.0));
-                    nrOfScans++;
-
-                    if (nrOfScans <= 100) {
-                        mWifiManager.startScan();
-                    } else {
-                        nrOfScans = null;
-                        startTime = null;
-                        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                        if (lastPos!= null && lastPos.CoordX != null && lastPos.CoordY!=null && lastPos.Orientation != null && lastPos.Cluster != null){
-                            handleEndOfScanning();
+                        if (nrOfScans < 100) {
+                            mWifiManager.startScan();
+                        } else {
+                            nrOfScans = null;
+                            startTime = null;
+                            if (lastPos != null && lastPos.CoordX != null && lastPos.CoordY != null && lastPos.Orientation != null && lastPos.Cluster != null) {
+                                handleEndOfScanning();
+                                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                            }
                         }
                     }
                 }
@@ -173,11 +184,12 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
             int count = vMeasurements.length;
             List<String> resultStr = new ArrayList<>();
             int contor;
+            HashSet<Measurement> capturedMeasurementSet2;
             for (int i = 0; i < count; i++) {
                 contor = 0;
-                capturedMeasurementSet = vMeasurements[i];
+                capturedMeasurementSet2 = vMeasurements[i];
                 HashSet<String> macAddressSet = new HashSet<>();
-                for (Measurement m : capturedMeasurementSet) {
+                for (Measurement m : capturedMeasurementSet2) {
                     macAddressSet.add(m.BSSID);
                     m.ref_CoordX = lastPos.CoordX;
                     m.ref_CoordY = lastPos.CoordY;
@@ -193,11 +205,12 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                             "Signal Str :" + m.SignalStrength + "\n\n");
 
                     contor++;
-                    publishProgress("Measurement " + contor + " / " + capturedMeasurementSet.size());
+                    publishProgress("Measurement " + contor + " / " + capturedMeasurementSet2.size());
 
                 }
                 myDb.insertRouterData(macAddressSet);
-                myDb.insertMeasurementData(capturedMeasurementSet);
+                myDb.insertMeasurementData(capturedMeasurementSet2);
+
             }
             return resultStr;
         }
@@ -218,6 +231,10 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
     public void handleEndOfScanning() {
 
         new InsertDataTask().execute(capturedMeasurementSet);
+        capturedMeasurementSet = new HashSet<>();
+        textViewTest.setText("C1: "+contor1.toString()+" C2: " +contor2.toString());
+
+
 
 
     }
@@ -227,54 +244,53 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        if(editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editLevel.getText().toString() == null || editOrientation.getText().toString() == null){
+                        if(checkForIncompletedTexts()){
                             Toast.makeText(RegisterActivity.this, "All position fields must be completed", Toast.LENGTH_LONG).show();
                             return;
                         }
-                        finePermission = false;
-                        checkPermissions();
-                        if ( finePermission == true){
-                            nrOfScans = 0;
-                            lastPos = new Position(
-                                    Double.parseDouble(editCoordX.getText().toString()),
-                                    Double.parseDouble(editCoordY.getText().toString()),
-                                    Integer.parseInt(editLevel.getText().toString()),
-                                    Integer.parseInt(editOrientation.getText().toString()),
-                                    editCluster.getText().toString());
-                            Long lastPosID = myDb.insertPosData(lastPos);
+                        else {
+                            finePermission = false;
+                            checkPermissions();
+                            if (finePermission == true) {
+                                nrOfScans = 0;
+                                lastPos = new Position(
+                                        Double.parseDouble(editCoordX.getText().toString()),
+                                        Double.parseDouble(editCoordY.getText().toString()),
+                                        Integer.parseInt(editLevel.getText().toString()),
+                                        Integer.parseInt(editOrientation.getText().toString()),
+                                        editCluster.getText().toString());
+                                Long lastPosID = myDb.insertPosData(lastPos);
 
-                            if (lastPosID >= 0){
-                                Toast.makeText(RegisterActivity.this, "Position Inserted , lastId: "+lastPosID, Toast.LENGTH_LONG).show();
-                                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                                startTime = SystemClock.elapsedRealtime();
-                                ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
-                                mWifiManager.startScan();
-
-                                }
-
-                            else {
-                                Cursor res = myDb.queryPosition(lastPos);
-                                if (res.getCount() == 0)
-                                    Toast.makeText(RegisterActivity.this, "Position not Inserted", Toast.LENGTH_LONG).show();
-
-                                else {
-
-                                    Integer colIndex = res.getColumnIndex("rowid");
-                                    if (res.moveToFirst()) {
-                                        lastPosID =(long)res.getInt(colIndex);
-                                        Toast.makeText(RegisterActivity.this, "Position already Inserted", Toast.LENGTH_LONG).show();
-                                    } else {
-                                        Toast.makeText(RegisterActivity.this, "Position not found", Toast.LENGTH_LONG).show();
-                                    }
+                                if (lastPosID >= 0) {
+                                    Toast.makeText(RegisterActivity.this, "Position Inserted , lastId: " + lastPosID, Toast.LENGTH_LONG).show();
                                     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                                     startTime = SystemClock.elapsedRealtime();
                                     ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
                                     mWifiManager.startScan();
+
+                                } else {
+                                    Cursor res = myDb.queryPosition(lastPos);
+                                    if (res.getCount() == 0)
+                                        Toast.makeText(RegisterActivity.this, "Position not Inserted", Toast.LENGTH_LONG).show();
+
+                                    else {
+
+                                        Integer colIndex = res.getColumnIndex("rowid");
+                                        if (res.moveToFirst()) {
+                                            lastPosID = (long) res.getInt(colIndex);
+                                            Toast.makeText(RegisterActivity.this, "Position already Inserted", Toast.LENGTH_LONG).show();
+                                        } else {
+                                            Toast.makeText(RegisterActivity.this, "Position not found", Toast.LENGTH_LONG).show();
+                                        }
+                                        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                                        startTime = SystemClock.elapsedRealtime();
+                                        ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
+                                        mWifiManager.startScan();
+                                    }
                                 }
+                            } else {
+                                Log.d("WIFI", "### Missing Permissions: " + finePermission);
                             }
-                        }
-                        else {
-                            Log.d("WIFI","### Missing Permissions: "+finePermission);
                         }
                     }
                 }
@@ -282,26 +298,20 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
     }
 
     public HashSet<Measurement> getScanResultInfo(){
-        int level;
+
         HashSet<Measurement> retList = new HashSet<>();
         //textWifiInfo.setText("");
         List<ScanResult> wifiScanList = mWifiManager.getScanResults();
         Log.d("WIFI","nrOfScans: "+nrOfScans);
         Log.d("WIFI","initializat ScanResult List: "+ wifiScanList.size());
         textWifiNr.setText("Nr of detected APs: "+ wifiScanList.size());
+        contor2 += wifiScanList.size();
         for (ScanResult scanResult : wifiScanList) {
             Measurement measurement = new Measurement();
             measurement.BSSID = scanResult.BSSID;
             measurement.SignalStrength = scanResult.level;
-
-
-            //measurement.Pos_ID /////////// De adaugat
-
-
             retList.add(measurement);
-            level = WifiManager.calculateSignalLevel(scanResult.level, 5);
-            Log.d("WIFI","Level is " + level + " out of 5 " + scanResult.level + " on " + scanResult.BSSID + "  ");
-            //textWifiInfo.append(scanResult.SSID  +" "+ scanResult.BSSID+" "+ scanResult.level+"\n\n");
+            Log.d("WIFI","Scan SigStr " + scanResult.level + " on " + scanResult.BSSID + "  ");
         }
 
         return retList;
@@ -418,30 +428,44 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
 
     public void deletePos(){
         btnDeletePos.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editLevel.getText().toString() == null || editOrientation.getText().toString() == null) {
-                            Toast.makeText(RegisterActivity.this, "All position fields must be completed", Toast.LENGTH_LONG).show();
-                            return;
-                        }
-                        Integer rowsDeleted = myDb.deleteMeasurementAtPosData(editCoordX.getText().toString(),editCoordY.getText().toString(),editLevel.getText().toString(),editOrientation.getText().toString() );
-                        Toast.makeText(RegisterActivity.this, "Deleted "+rowsDeleted+" measurements", Toast.LENGTH_LONG).show();
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (checkForIncompletedTexts()) {
+                        Toast.makeText(RegisterActivity.this, "All position fields must be completed", Toast.LENGTH_LONG).show();
+                        return;
+                    } else {
+                        Position pos = new Position(
+                                Double.parseDouble(editCoordX.getText().toString()),
+                                Double.parseDouble(editCoordY.getText().toString()),
+                                Integer.parseInt(editLevel.getText().toString()),
+                                Integer.parseInt(editOrientation.getText().toString()),
+                                editCluster.getText().toString());
+
+                        Integer rowsDeleted = myDb.deleteMeasurementAtPosData(pos);
+                        Toast.makeText(RegisterActivity.this, "Deleted " + rowsDeleted + " measurements", Toast.LENGTH_LONG).show();
                         return;
                     }
-                });
+                }
+            });
     }
 
     public void viewMeasurementsOfPos(){
         btnViewMeasurements.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editLevel.getText().toString() == null || editOrientation.getText().toString() == null) {
-                            Toast.makeText(RegisterActivity.this, "All position fields must be completed", Toast.LENGTH_LONG).show();
-                            return;
-                        }
-                        Cursor res = myDb.queryAllMeasurementsFromPosition(editCoordX.getText().toString(),editCoordY.getText().toString(),editLevel.getText().toString(),editOrientation.getText().toString());
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (checkForIncompletedTexts()) {
+                        Toast.makeText(RegisterActivity.this, "All position fields must be completed", Toast.LENGTH_LONG).show();
+                        return;
+                    } else {
+                        Position pos = new Position(
+                                Double.parseDouble(editCoordX.getText().toString()),
+                                Double.parseDouble(editCoordY.getText().toString()),
+                                Integer.parseInt(editLevel.getText().toString()),
+                                Integer.parseInt(editOrientation.getText().toString()),
+                                editCluster.getText().toString());
+                        Cursor res = myDb.queryAllMeasurementsFromPosition(pos);
                         if (res == null || res.getCount() == 0) {
                             // show message
                             showMessage("Error", "Nothing found");
@@ -451,21 +475,31 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                         StringBuffer buffer = new StringBuffer();
                         while (res.moveToNext()) {
                             //buffer.append("Id :" + res.getString(0) + "\n");
-                            buffer.append("CoordX :" + res.getString(0) + "\n");
-                            buffer.append("CoordY :" + res.getString(1) + "\n");
-                            buffer.append("Orientation :" + res.getString(2) + "\n");
-                            buffer.append("Cluster :" + res.getString(3) + "\n");
-                            buffer.append("BSSID :" + res.getString(4) + "\n");
-                            buffer.append("SigStr :" + res.getString(5) + "\n\n");
+                            buffer.append("ID : " + res.getString(0)+"\n");
+                            buffer.append("CoordX :" + res.getString(1) + "\n");
+                            buffer.append("CoordY :" + res.getString(2) + "\n");
+                            buffer.append("Orientation :" + res.getString(3) + "\n");
+                            buffer.append("Cluster :" + res.getString(4) + "\n");
+                            buffer.append("BSSID :" + res.getString(5) + "\n");
+                            buffer.append("SigStr :" + res.getString(6) + "\n\n");
                         }
 
                         // Show all data
-                        showMessage("Measurements: ", buffer.toString());
+                        showMessage("Measurements: "+res.getCount(), buffer.toString());
                     }
                 }
+            }
         );
 
 
+    }
+
+    public boolean checkForIncompletedTexts (){
+
+        boolean res = editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editLevel.getText().toString() == null || editOrientation.getText().toString() == null || editCluster.getText().toString() == null ||
+                editCoordX.getText().toString().compareTo("")==0 || editCoordY.getText().toString().compareTo("")==0 || editLevel.getText().toString().compareTo("")==0 || editOrientation.getText().toString().compareTo("")==0 || editCluster.getText().toString().compareTo("")==0;
+        Log.d("Register","checkForCompletedTexts result: "+res);
+        return res;
     }
 
 
