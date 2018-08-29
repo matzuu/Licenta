@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 public class FileHelper extends Thread{
 
     final static String path = "D:/Facultate/Licenta";
-    final static String filename = "datein.txt";
+
     final static String TAG = "ERROR";//FileHelper.class.getName();
 
     public void run(){
@@ -29,11 +29,32 @@ public class FileHelper extends Thread{
 
 
 
-    public static List<String> readFile(Context context){
+    public static List<String> readAssetsFile(Context context){
         String line;
         List<String> rezList = new ArrayList<>();
         try {
             InputStreamReader inputStreamReader = new InputStreamReader(context.getAssets().open("crawdadOfflineTraceTest"));
+            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+            while ( (line = bufferedReader.readLine()) != null )
+            {
+                rezList.add(line);
+            }
+            bufferedReader.close();
+        }
+        catch(FileNotFoundException ex) {
+            Log.d("FileNotFound", ex.getMessage());
+        }
+        catch(IOException ex) {
+            Log.d("IOException", ex.getMessage());
+        }
+        return rezList;
+    }
+
+    public static List<String> readInternalFile(String filename, Context context){
+        String line;
+        List<String> rezList = new ArrayList<>();
+        try {
+            InputStreamReader inputStreamReader = new InputStreamReader(context.openFileInput(filename));
             BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
             while ( (line = bufferedReader.readLine()) != null )
             {
@@ -227,6 +248,154 @@ public class FileHelper extends Thread{
         return retValue;
     }
 
+    public static ArrayList<HashSet<Measurement>> parseString2 (List<String> stringList){
+        ArrayList<HashSet<Measurement>> retList = new ArrayList<>();
+
+        String cluster;
+        Matcher mCluster;
+        Matcher mPos;
+        Position pos = new Position();
+        Double coordx;
+        Double coordy;
+        Double orientation;
+
+        HashSet<String> macAddressSet = new HashSet<>();
+        String macAddressAux;
+        Matcher mMacAddress;
+        Matcher mMacAddressSig;
+        Matcher mMeasurement;
+        HashSet<Measurement> measurementHashSet;
+        Measurement measurement = new Measurement();
+        List<String> auxLine = new ArrayList<>();
+        String aux = "";
+
+
+        Integer noLine = 0; //folosit doar ptr log
+        for (String line : stringList) {
+            noLine++;
+            Log.d("parseString", "\n linia: "+ noLine +" \n " + line + " \n");
+            Log.d("parseString", "cur sizeOf mac: " + macAddressSet.size());
+
+            mCluster = Pattern.compile("cluster=\\w*").matcher(line);
+            cluster = null;
+            if(mCluster.find()){
+                aux = mCluster.group();
+                cluster = aux.substring(8,aux.length());
+            }
+            mPos = Pattern.compile("\\d\\.\\d,").matcher(line);
+            coordx = null;
+            coordy = null;
+            if (mPos.find()) {
+                aux = mPos.group();
+                aux = aux.substring(0, aux.length() - 1);
+                Log.d("parseString", "INCERC COORDX " + aux);
+                coordx = Double.parseDouble(aux);
+            }
+            if (mPos.find()) {
+                aux = mPos.group();
+                aux = aux.substring(0, aux.length() - 1);
+                coordy = Double.parseDouble(aux);
+            }
+
+            mPos = Pattern.compile("degree=\\d.\\d").matcher(line);
+            orientation=null;
+            if (mPos.find()){
+                aux = mPos.group();
+                aux = aux.substring(7,aux.length());
+                orientation = Double.parseDouble(aux);
+                orientation =  Math.floor((orientation)/45.0)*45;
+                orientation = orientation - 180; // pentru a muta din intrevalul 0:359.9 in -179.9:180
+                if (orientation == -180)
+                    orientation = 180.0;
+            }
+
+
+            //ma asigur ca pe fiecare linie gasesc doua Double de pozitie.. in caz contrar ignor linia;
+            if (coordx != null && coordy != null) {
+                if (coordx != pos.CoordX || coordy != pos.CoordY) {
+                    pos.CoordX = coordy;
+                    pos.CoordY = coordy;
+                    pos.Level = 0;
+                    pos.Orientation = orientation.intValue();
+                    if(cluster != null)
+                        pos.Cluster = cluster;
+                    else pos.Cluster = "crawDadOnline";
+                    Log.d("parseString","position: "+pos.toString());
+
+                }
+                //gasesc toate intensitatile de semnal asociate cu o adresa mac
+                auxLine = new ArrayList<>();
+                mMacAddressSig = Pattern.compile("\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}=-\\d{2}").matcher(line);
+                while (mMacAddressSig.find()) {
+                    auxLine.add(mMacAddressSig.group());
+                }
+
+                measurementHashSet = new HashSet<>();
+
+                for (String s : auxLine) {
+                    Log.d("parseString", "Stringul s: " + s);
+                    mMacAddress = Pattern.compile("\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}").matcher(s);
+                    mMeasurement = Pattern.compile("-\\d{2}").matcher(s);
+                    if (mMacAddress.find()) {
+                        macAddressAux = mMacAddress.group();
+                        macAddressSet.add(macAddressAux);
+
+                        if (mMeasurement.find()) {
+                            measurement = new Measurement();
+                            measurement.SignalStrength = Integer.parseInt(mMeasurement.group());
+                            measurement.ref_CoordX = pos.CoordX;
+                            measurement.ref_CoordY = pos.CoordY;
+                            measurement.ref_Orientation=pos.Orientation;
+                            measurement.ref_Cluster = pos.Cluster;
+                            measurement.BSSID = macAddressAux;
+                            measurementHashSet.add(measurement);
+                            Log.d("parseString", "marimea MeasurementSet: " + measurementHashSet.size());
+                            }
+                        }
+                    }//end aux for
+
+                retList.add(measurementHashSet);
+                Log.d("parseString","last measurementHashSetsize: "+ measurementHashSet.size());
+
+                }
+            }//end for
+
+            Log.d("parseString", "sizeOfmacAddressSet: " + macAddressSet.size() + " \n sizeOfRetList " + retList.size());
+
+
+        //Pozitie
+        //Router Sgl Str
+        return retList;
+    }
+    public static boolean writeLiveMeasurements (List<HashSet<Measurement>> liveMEasurementList,Position p, String filename,Context context){
+
+        if (p == null){ return false;}
+        StringBuilder sb;
+
+        Log.d("WRITE","trying to write mm file: "+filename);
+
+        try {
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput(filename, Context.MODE_APPEND));
+
+            for(HashSet<Measurement> hs : liveMEasurementList){
+                sb = new StringBuilder();
+                sb.append("cluster="+p.Cluster+";pos="+p.CoordX+","+p.CoordY+";degree="+p.Orientation);
+                for( Measurement m : hs){
+                    sb.append(";"+m.BSSID+"="+m.SignalStrength);
+                }
+                outputStreamWriter.append(sb.toString()+"\r\n");
+            }
+
+            outputStreamWriter.close();
+        }
+        catch (IOException e) {
+            Log.e("Exception", "File write failed: " + e.toString());
+            return false;
+        }
+
+        return true;
+    }
+
     public static boolean writeFile(List<String> stringList,String filename,Context context,Integer mode){
 
         Log.d("WRITE","trying to write file: "+filename+"  in mode: "+mode);
@@ -249,6 +418,26 @@ public class FileHelper extends Thread{
             return false;
         }
         return true;
+    }
+
+    public static ArrayList<HashSet<Measurement>> getOnlineScans (String type,Context context){
+
+        ArrayList<HashSet<Measurement>> retList = null;
+        List<String> stringList;
+        if (type.compareTo("android")==0){
+
+            stringList = readInternalFile("testScan.txt",context);
+            stringList = removeComments(stringList);
+            retList = parseString2(stringList);
+
+        }
+
+        if(type.compareTo("crawdad")==0){
+
+        }
+
+        Log.d("READ","getOnlineScans retSize: "+retList.size());
+        return retList;
     }
 
 

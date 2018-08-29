@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         Log.d("READ", "Precitire");
-                        List<String> stringList = FileHelper.readFile(MainActivity.this);
+                        List<String> stringList = FileHelper.readAssetsFile(MainActivity.this);
                         Log.d("READ", "Sterg Comment: "+stringList.size());
                         stringList = FileHelper.removeComments(stringList);
                         boolean ok;

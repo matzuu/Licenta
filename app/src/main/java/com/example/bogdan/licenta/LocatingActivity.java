@@ -21,6 +21,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
 import android.widget.Button;
@@ -29,9 +30,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -62,9 +63,10 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
     DatabaseHelper myDb;
     Position lastPos;
     Integer nrOfScans;
+    Integer liveMeasurementsTotalSize;
     StringBuffer capturedDatabuffer;
-    StringBuffer exportedDataBuffer;
     HashSet<Measurement> capturedMeasurementSet;
+    List<HashSet<Measurement>> liveMeasurementSet;
 
 
 
@@ -99,10 +101,11 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         editCluster = (EditText) findViewById(R.id.editText_Cluster2);
 
         capturedMeasurementSet = new HashSet<>();
+        liveMeasurementSet = new ArrayList<>();
+        liveMeasurementsTotalSize = 500;
 
         capturedDatabuffer = new StringBuffer();
         capturedDatabuffer.append("N/A");
-        exportedDataBuffer = new StringBuffer();
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -114,23 +117,40 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
             public void onReceive(Context c, Intent intent) {
 
                 if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-                    if (startTime != null && nrOfScans != null) {
+                    if (startTime != null && nrOfScans != null && capturedMeasurementSet != null && liveMeasurementSet != null) {
                         capturedMeasurementSet.addAll(getScanResultInfo());
+
+                        liveMeasurementSet.add(capturedMeasurementSet);
+
                         timeDifference = SystemClock.elapsedRealtime() - startTime;
                         textWifiInfo.setText("Seconds elapsed: " + Double.toString(timeDifference / 1000.0));
                         nrOfScans++;
-                        if (nrOfScans < 3) {
+                        //normal mode
+                        /*if (nrOfScans < 3) {
+                            mWifiManager.startScan();
+                        } else {
+
+                            startTime = null;
+                            nrOfScans = null;
+                            // new method?
+                            handleEndOfScanning();
+                        }*/
+                        //testing mode
+                        if(lastPos == null){
+                            Log.d("WIFI","LASTPOS == NULL!!");
+                        }
+                        if(nrOfScans < liveMeasurementsTotalSize) {
+                            capturedMeasurementSet = new HashSet<>();
                             mWifiManager.startScan();
                         } else {
                             startTime = null;
-                            // new method?
-                            handleEndOfScanning();
+                            nrOfScans = null;
+                            handleEndOfScanning2();
                         }
                     }
                 }
             }
-        };
-
+        }; //END BROADCAST RECEIVER
 
         algorithmKNN();
         startScan();
@@ -160,11 +180,6 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
     // WIFI ////////////
 
-
-
-
-
-
     public void algorithmKNN(){
         btnSearchkNN.setOnClickListener(
                 new View.OnClickListener() {
@@ -172,45 +187,57 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
                     public void onClick(View v) {
                         Boolean isStill = true;
                         //todo recognition  ActivityRecognitionClient de detectat daca Still / Not Walking
-                        if (isStill == true) {
-                            LinkedHashMap<Position, BigDecimal> estimatedPos;
+                        if (isStill == true && lastPos!= null) {
+                            Log.d("kNN","Entering KNN");
                             StringBuffer strBuffer = new StringBuffer();
                             List<String> stringsToWrite = new ArrayList<>();
 
-                            Integer k=3;
-                            Integer degreeNo=4;
+                            Integer k = 3;
+                            Integer degreeNo = 4;
                             Integer liveMeasurements = 3; // TODO: SCHIMBAT DE CATE ORI SCANEZ
                             Integer trainingMeasurements = 100;
-                            Integer apSize=10;
+                            Integer apSize = 10;
 
-                            Integer degree = Algorithms.radiansToRounded90Degrees(mOrientation[0]);
+                            Integer contorLiveMM=0;
+                            HashSet<Measurement> combinetHashSet = new HashSet<>();
 
-                            estimatedPos = Algorithms.kNN(capturedMeasurementSet, degree, "Acasa", myDb,degreeNo,k,trainingMeasurements,apSize);
-                            if (estimatedPos != null) {
+                            LinkedHashMap<Position, BigDecimal> estimatedPos;
+                            List<HashSet<Measurement>> onlineScanList = FileHelper.getOnlineScans("android",LocatingActivity.this);
+                            Log.d("kNN","onlineScanList.size(): "+ onlineScanList.size());
+                            if(onlineScanList != null) {
+                                for (HashSet<Measurement> hs : onlineScanList) {
+                                    if(contorLiveMM < liveMeasurements){
+                                        combinetHashSet.addAll(hs);
+                                    }
 
-                                String s = "cluster=" + editCluster.getText().toString() +
-                                        ";pos=" + editCoordX.getText().toString() + "," + editCoordY.getText().toString() +
-                                        ";degree=" + editOrientation.getText().toString() +
-                                        ";degreeNo="+degreeNo+
-                                        ";neighbours="+k+
-                                        ";liveMeasurements="+liveMeasurements +
-                                        ";trainingMeasurements"+trainingMeasurements+
-                                        ";apSize"+apSize;
+                                    estimatedPos = Algorithms.kNN(hs, lastPos.Orientation, "Acasa", myDb, degreeNo, k, trainingMeasurements, apSize);
 
-                                for (LinkedHashMap.Entry<Position, BigDecimal> entry : estimatedPos.entrySet()) {
-                                    strBuffer.append("Pos: " + entry.getKey().toString() + "\n Probability: " + entry.getValue().toString());
-                                    s= s+";expectedPos="+entry.getKey().CoordX+","+entry.getKey().CoordY+";weight="+entry.getValue().toString();
+                                    if (estimatedPos != null) {
+
+                                        String s = "cluster=" + lastPos.Cluster +
+                                                ";pos=" + lastPos.CoordX.toString() + "," + lastPos.CoordY.toString() +
+                                                ";degree=" + lastPos.Orientation.toString() +
+                                                ";degreeNo=" + degreeNo +
+                                                ";neighbours=" + k +
+                                                ";liveMeasurements=" + liveMeasurements +
+                                                ";trainingMeasurements=" + trainingMeasurements +
+                                                ";apSize=" + apSize;
+
+                                        for (LinkedHashMap.Entry<Position, BigDecimal> entry : estimatedPos.entrySet()) {
+                                            strBuffer.append("Pos: " + entry.getKey().toString() + "\n Probability: " + entry.getValue().toString());
+                                            s = s + ";expectedPos=" + entry.getKey().CoordX + "," + entry.getKey().CoordY + ";weight=" + entry.getValue().toString();
+                                        }
+                                        stringsToWrite.add(s + "\r\n");
+                                        FileHelper.writeFile(stringsToWrite, "dateKNNresultsTest.txt", getApplicationContext(), 2);
+                                        showMessage("kNN Result", strBuffer.toString());
+
+                                    }
+                                    Log.d("LocatingAct", "Back in locationAct from kNN");
+
                                 }
-
-                                stringsToWrite.add(s+"\r\n");
-                                FileHelper.writeFile(stringsToWrite, "dateKNNresults.txt", getApplicationContext(),2);
-                                showMessage("kNN Result", strBuffer.toString());
-
                             }
-                            Log.d("LocatingAct", "Back in locationAct from kNN");
-
                         }
-                    }
+                     }
                 }
         );
     }
@@ -221,12 +248,23 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
             return;
         }
         else {
+
             finePermission = false;
             checkPermissions();
             if (finePermission == true) {
+                Toast.makeText(LocatingActivity.this,"Starting wifi scan Nr: "+ liveMeasurementsTotalSize,Toast.LENGTH_SHORT);
                 nrOfScans = 0;
+
+                lastPos = new Position(
+                        Double.parseDouble(editCoordX.getText().toString()),
+                        Double.parseDouble(editCoordY.getText().toString()),
+                        Integer.parseInt(editOrientation.getText().toString()),
+                        editCluster.getText().toString());
+
                 startTime = SystemClock.elapsedRealtime();
+                liveMeasurementSet = new ArrayList<>();
                 capturedMeasurementSet = new HashSet<>();
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 ((WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).startScan();
                 mWifiManager.startScan();
             } else {
@@ -238,7 +276,8 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
     public void handleEndOfScanning(){
         HashSet<String> macAddressSet = new HashSet<>();
-
+        liveMeasurementSet.add(capturedMeasurementSet);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         capturedDatabuffer = new StringBuffer();
         capturedDatabuffer.append("Captured Measurments: \n\n ");
         for (Measurement s : capturedMeasurementSet) {
@@ -248,6 +287,30 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
         }
         showMessage("Captured Data", capturedDatabuffer.toString());
+
+    }
+
+    public void handleEndOfScanning2(){
+
+        Log.d("WIFI","Entered handleEndOfScanning2");
+        boolean result = FileHelper.writeLiveMeasurements(liveMeasurementSet,lastPos,"testScan.txt",LocatingActivity.this);
+        Log.d("WIFI","Wrote successfully: "+result);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        HashSet<String> macAddressSet = new HashSet<>();
+        capturedDatabuffer = new StringBuffer();
+        capturedDatabuffer.append("Captured list size: "+liveMeasurementSet+"\n\n ");
+        for (HashSet<Measurement> hs : liveMeasurementSet){
+            capturedDatabuffer.append(hs.size()+"\n");
+            /*
+            for (Measurement m : hs) {
+                macAddressSet.add(m.BSSID);
+                capturedDatabuffer.append("BSSID :" + m.BSSID + "\n");
+                capturedDatabuffer.append("Signal Str :" + m.SignalStrength + "\n\n");
+            }*/
+        }
+
+        showMessage("Captured Data", capturedDatabuffer.toString());
+
     }
 
     public HashSet<Measurement> getScanResultInfo(){
@@ -361,6 +424,9 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        liveMeasurementsTotalSize = 250; // pentru fiecare locatie imi trebuie 50 de teste * masuratori live de la 1 la 10 => imi trebuie 500 pe scanare * 10 scanari
+                        liveMeasurementSet = new ArrayList<>();
+                        startTime = null;
                         capturedMeasurementSet = new HashSet<>();
                         startWifiScanning();
 
