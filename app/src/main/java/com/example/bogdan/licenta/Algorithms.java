@@ -34,9 +34,9 @@ public class Algorithms {
 
 
 
-    public static LinkedHashMap<Position,BigDecimal> kNN(HashSet<Measurement> currentMeasurementSet,Integer orientation,String cluster,DatabaseHelper myDb,Integer k){
+    public static LinkedHashMap<Position,BigDecimal> kNN(HashSet<Measurement> liveMeasurementsSet, Integer orientation, String cluster, DatabaseHelper myDb, Integer degreeNo, Integer k, Integer trainingMeasurements, Integer apSize){
 
-        if (currentMeasurementSet.size() < 1){
+        if (liveMeasurementsSet.size() < 1){
             return null;
         }
         Log.d("ALG","Starting Algorithm kNN");
@@ -45,15 +45,32 @@ public class Algorithms {
         Position pos = new Position();
         Measurement m;
         List<Measurement> measurementList = new ArrayList<>();
-        StringBuffer buffer = new StringBuffer();
-        Integer nrOfPos = 0;
+        //StringBuffer buffer = new StringBuffer();
+        Integer nrOfMeasurements = 0;
+        Integer curPosCount = 0;
 
         HashSet<String> macAddressSet = new HashSet<>();
         //imi iau toaate BSSID-urile din Measurment-ul facut recent.
-        for (Measurement measurement : currentMeasurementSet) {
+        for (Measurement measurement : liveMeasurementsSet) {
             macAddressSet.add(measurement.BSSID);
+            Log.d("ALG","live BSSID");
         }
-        Cursor res2 = myDb.queryAllPositionsAndMeasurementsFromBSSIDandCluster(macAddressSet,cluster);
+
+        Cursor res=myDb.querySortedBSSIDOccurrences(macAddressSet,cluster,apSize);
+        if (res.getCount() == 0) {
+            // show message
+            Log.d("ALG","No rows retrieved");
+            return null;
+        }
+
+        macAddressSet = new HashSet<>();
+        while (res.moveToNext()) {
+            macAddressSet.add(res.getString(res.getColumnIndex("MACAddress")));
+            Log.d("QUERY","returned BSSID: "+res.getString(res.getColumnIndex("MACAddress")) );
+        }
+        Log.d("ALG","Intermediate number of BSSID: "+macAddressSet.size());
+        //Cursor res2 = myDb.queryAllPositionsAndMeasurementsFromBSSIDandCluster(macAddressSet,cluster); veche , fara orientari
+        Cursor res2=myDb.querykNN(macAddressSet,orientation,cluster,degreeNo);
         if (res2.getCount() == 0) {
             // show message
             Log.d("ALG","No rows retrieved");
@@ -61,7 +78,8 @@ public class Algorithms {
         }
 
         if(res2.moveToFirst()) {
-            nrOfPos++;
+            nrOfMeasurements++;
+            curPosCount++;
             pos = new Position();
             pos.CoordX = res2.getDouble(res2.getColumnIndex("CoordX"));
             pos.CoordY = res2.getDouble(res2.getColumnIndex("CoordY"));
@@ -77,13 +95,13 @@ public class Algorithms {
             m.SignalStrength = res2.getInt(res2.getColumnIndex("SignalStrength"));
             measurementList.add(m);
         }
-        while (res2.moveToNext()) {
-            if(     pos.CoordX != res2.getDouble(res2.getColumnIndex ("CoordX" )) ||
+        while (res2.moveToNext()) { //verific daca citesc alta pozitie
+            if(     (pos.CoordX != res2.getDouble(res2.getColumnIndex ("CoordX" )) ||
                     pos.CoordY != res2.getDouble(res2.getColumnIndex ("CoordY" )) ||
-                    pos.Orientation != res2.getInt(res2.getColumnIndex ("Orientation" ))
+                    pos.Orientation != res2.getInt(res2.getColumnIndex ("Orientation" )))
                     ){
-                nrOfPos++;
-                //pun poz de dinainte si measureliste-ul
+
+                //adaug poz de dinainte si measureliste-ul
                 posMeasureHashMap.put(pos,measurementList);
                 //ma pregatesc ptr urmatoarea poz
                 measurementList = new ArrayList<>();
@@ -92,30 +110,35 @@ public class Algorithms {
                 pos.CoordY = res2.getDouble(res2.getColumnIndex ("CoordY" ));
                 pos.Orientation = res2.getInt(res2.getColumnIndex ("Orientation" ));
                 pos.Cluster = res2.getString(res2.getColumnIndex ("Cluster" ));
-                buffer.append("ref_CoordX :" + pos.CoordX + "  ref_CoordY :" + pos.CoordY + "  ref_Orientation :" + pos.Orientation + "  ref_Cluster :" + pos.Cluster  + "\n");
+                //buffer.append("ref_CoordX :" + pos.CoordX + "  ref_CoordY :" + pos.CoordY + "  ref_Orientation :" + pos.Orientation + "  ref_Cluster :" + pos.Cluster  + "\n");
+                curPosCount = 1;
             }
-            m = new Measurement();
-            m.id = res2.getInt(res2.getColumnIndex ("ID" ));
-            m.ref_CoordX = res2.getDouble(res2.getColumnIndex ("CoordX" ));
-            m.ref_CoordY = res2.getDouble(res2.getColumnIndex ("CoordY" ));
-            m.ref_Orientation = res2.getInt(res2.getColumnIndex ("Orientation" ));
-            m.ref_Cluster = res2.getString(res2.getColumnIndex ("Cluster" ));
-            m.BSSID = res2.getString(res2.getColumnIndex ("BSSID" ));
-            m.SignalStrength = res2.getInt(res2.getColumnIndex ("SignalStrength" ));
-            measurementList.add(m);
+            //pentru analiza: verific sa nu am nr de masuratori mai mare decat nr datelor de antrenrare(trainingMeasurements)
+            if(curPosCount<trainingMeasurements) {
+                nrOfMeasurements++;
+                m = new Measurement();
+                m.id = res2.getInt(res2.getColumnIndex("ID"));
+                m.ref_CoordX = res2.getDouble(res2.getColumnIndex("CoordX"));
+                m.ref_CoordY = res2.getDouble(res2.getColumnIndex("CoordY"));
+                m.ref_Orientation = res2.getInt(res2.getColumnIndex("Orientation"));
+                m.ref_Cluster = res2.getString(res2.getColumnIndex("Cluster"));
+                m.BSSID = res2.getString(res2.getColumnIndex("BSSID"));
+                m.SignalStrength = res2.getInt(res2.getColumnIndex("SignalStrength"));
+                measurementList.add(m);
+            }
 
-
+            /*
             buffer.append("ID :" +m.id  + "\n");
             buffer.append("BSSID :" + m.BSSID + "\n");
             buffer.append("SignalStr :" + m.SignalStrength + "\n\n");
+            */
         }
         posMeasureHashMap.put(pos,measurementList);
-        Log.d("ALG","Nr of Positions: "+ nrOfPos);
         //Log.d("ALG","Queried Measurement Map: \n" + buffer.toString()); //spam
-        Log.d("ALG","PosMeasureHASHMAP.size(): "+posMeasureHashMap.size());
+        Log.d("ALG","\nPosMeasureHASHMAP.size()/nrOfMeasurements: "+posMeasureHashMap.size()+"\n nrOfMeasurements: "+nrOfMeasurements);
         //poz cititite; trebuie gasita cea mai similara poz;
 
-        HashMap<Position,BigDecimal> posEuclidianDistance = calculateEuclideanDistance(posMeasureHashMap,currentMeasurementSet);
+        HashMap<Position,BigDecimal> posEuclidianDistance = calculateEuclideanDistance(posMeasureHashMap,liveMeasurementsSet);
         Log.d("ALG","Exited calculateED");
         Log.d("ALG","Sorting the map");
         LinkedHashMap<Position,BigDecimal> sortedMap = sortByValue(posEuclidianDistance);
@@ -125,7 +148,7 @@ public class Algorithms {
             returnedMap.put(entry.getKey(),entry.getValue());
             contor++;
             Log.d("ALG3","Contor: "+contor);
-            if(contor >= 10 )//de inlocuit cu k
+            if(contor >= k )//de inlocuit cu k
                 break;
         }
         //Position expectedPos = new Position();
@@ -311,6 +334,19 @@ public class Algorithms {
         return (int)degreeToReturn;
     }
 
+    public static Integer radiansToRounded90Degrees(float mOrientation){
+
+        double degreeToReturn;
+        degreeToReturn = Math.toDegrees((double)mOrientation); //raw
+        //degreeAux = degreeAux + 22.5;
+
+        degreeToReturn = Math.floor((degreeToReturn + 45.0)/90.0)*90;//Impartit pe N , NV , V , SV...
+
+        if (degreeToReturn == -180)
+            degreeToReturn = 180;
+
+        return (int)degreeToReturn;
+    }
     public static Integer sumOfElements(Integer[] arr){
         Integer sum = 0;
         for (Integer i = 0;i<arr.length;i++)

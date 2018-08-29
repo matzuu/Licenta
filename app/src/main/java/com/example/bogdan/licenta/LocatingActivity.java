@@ -30,6 +30,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -47,7 +48,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
     TextView textWifiInfo;
     TextView textWifiNr;
     ImageView imgViewCompass;
-    EditText editCoordX, editCoordY, editLevel, editPosID,editOrientation,editCluster;
+    EditText editCoordX, editCoordY,editOrientation,editCluster;
 
     private SensorManager mSensorManager;
     Sensor mAccelerometer;
@@ -62,6 +63,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
     Position lastPos;
     Integer nrOfScans;
     StringBuffer capturedDatabuffer;
+    StringBuffer exportedDataBuffer;
     HashSet<Measurement> capturedMeasurementSet;
 
 
@@ -91,11 +93,16 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         imgViewCompass = findViewById(R.id.imageView_Compass);
         textWifiInfo = findViewById(R.id.textView_wifiInfo);
         textWifiNr = findViewById(R.id.textView_wifiNr);
+        editCoordX = (EditText) findViewById(R.id.editText_coordX2);
+        editCoordY = (EditText) findViewById(R.id.editText_CoordY2);
+        editOrientation = (EditText) findViewById(R.id.editText_Orientation2);
+        editCluster = (EditText) findViewById(R.id.editText_Cluster2);
 
         capturedMeasurementSet = new HashSet<>();
 
         capturedDatabuffer = new StringBuffer();
         capturedDatabuffer.append("N/A");
+        exportedDataBuffer = new StringBuffer();
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -165,16 +172,43 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
                     public void onClick(View v) {
                         Boolean isStill = true;
                         //todo recognition  ActivityRecognitionClient de detectat daca Still / Not Walking
-                        if (isStill == true){
-                            LinkedHashMap<Position,BigDecimal> estimatedPos;
-                            StringBuffer strBuffer = new StringBuffer ();
-                            double degree = ((int)(Math.toDegrees((double)mOrientation[0])+ 22.5)/45)*45;
-                            estimatedPos = Algorithms.kNN(capturedMeasurementSet,(int)degree,"Acasa",myDb,3);
-                            for (LinkedHashMap.Entry<Position,BigDecimal> entry : estimatedPos.entrySet()) {
-                                strBuffer.append("\nPos: "+ entry.getKey().toString() +"\n Probability: "+ entry.getValue().toString());
+                        if (isStill == true) {
+                            LinkedHashMap<Position, BigDecimal> estimatedPos;
+                            StringBuffer strBuffer = new StringBuffer();
+                            List<String> stringsToWrite = new ArrayList<>();
+
+                            Integer k=3;
+                            Integer degreeNo=4;
+                            Integer liveMeasurements = 3; // TODO: SCHIMBAT DE CATE ORI SCANEZ
+                            Integer trainingMeasurements = 100;
+                            Integer apSize=10;
+
+                            Integer degree = Algorithms.radiansToRounded90Degrees(mOrientation[0]);
+
+                            estimatedPos = Algorithms.kNN(capturedMeasurementSet, degree, "Acasa", myDb,degreeNo,k,trainingMeasurements,apSize);
+                            if (estimatedPos != null) {
+
+                                String s = "cluster=" + editCluster.getText().toString() +
+                                        ";pos=" + editCoordX.getText().toString() + "," + editCoordY.getText().toString() +
+                                        ";degree=" + editOrientation.getText().toString() +
+                                        ";degreeNo="+degreeNo+
+                                        ";neighbours="+k+
+                                        ";liveMeasurements="+liveMeasurements +
+                                        ";trainingMeasurements"+trainingMeasurements+
+                                        ";apSize"+apSize;
+
+                                for (LinkedHashMap.Entry<Position, BigDecimal> entry : estimatedPos.entrySet()) {
+                                    strBuffer.append("Pos: " + entry.getKey().toString() + "\n Probability: " + entry.getValue().toString());
+                                    s= s+";expectedPos="+entry.getKey().CoordX+","+entry.getKey().CoordY+";weight="+entry.getValue().toString();
+                                }
+
+                                stringsToWrite.add(s+"\r\n");
+                                FileHelper.writeFile(stringsToWrite, "dateKNNresults.txt", getApplicationContext(),2);
+                                showMessage("kNN Result", strBuffer.toString());
+
                             }
-                            showMessage("kNN Result",strBuffer.toString());
-                            Log.d("LocatingAct","Back in locationAct from kNN");
+                            Log.d("LocatingAct", "Back in locationAct from kNN");
+
                         }
                     }
                 }
@@ -317,7 +351,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
             //textViewCompass.setText("Azimuth: "+ Integer.toString((int)(Math.toDegrees((double)mOrientation[0]))));
             Integer degreeToShow;
-            degreeToShow = Algorithms.radiansToRounded45Degrees(mOrientation[0]);
+            degreeToShow = Algorithms.radiansToRounded90Degrees(mOrientation[0]);
             textViewCompass.setText("Azimuth: "+ Integer.toString(degreeToShow));
         }
     }
@@ -346,8 +380,8 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
     }
 
     public boolean checkForIncompletedTexts (){
-        boolean res = editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editLevel.getText().toString() == null || editOrientation.getText().toString() == null || editCluster.getText().toString() == null ||
-                editCoordX.getText().toString().compareTo("")==0 || editCoordY.getText().toString().compareTo("")==0 || editLevel.getText().toString().compareTo("")==0 || editOrientation.getText().toString().compareTo("")==0 || editCluster.getText().toString().compareTo("")==0;
+        boolean res = editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editOrientation.getText().toString() == null || editCluster.getText().toString() == null ||
+                editCoordX.getText().toString().compareTo("")==0 || editCoordY.getText().toString().compareTo("")==0 || editOrientation.getText().toString().compareTo("")==0 || editCluster.getText().toString().compareTo("")==0;
         Log.d("Locating","checkForCompletedTexts result: "+res);
         return res;
     }

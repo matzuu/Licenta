@@ -169,6 +169,7 @@ public class FileHelper extends Thread{
                 aux = aux.substring(7,aux.length());
                 orientation = Double.parseDouble(aux);
                 orientation =  Math.floor((orientation)/45.0)*45;
+                orientation = orientation - 180; // pentru a muta din intrevalul 0:359.9 in -179.9:180
                 if (orientation == -180)
                     orientation = 180.0;
             }
@@ -226,10 +227,18 @@ public class FileHelper extends Thread{
         return retValue;
     }
 
-    public static boolean writeFile(List<String> stringList,Context context){
+    public static boolean writeFile(List<String> stringList,String filename,Context context,Integer mode){
+
+        Log.d("WRITE","trying to write file: "+filename+"  in mode: "+mode);
+        switch(mode){
+            case 1: mode = Context.MODE_PRIVATE;
+                break;
+            case 2: mode = Context.MODE_APPEND;
+        }
+
         try {
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("dateAndroidOut.txt", Context.MODE_PRIVATE));
-            outputStreamWriter.write("# dateOutAndroid\r\n");
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput(filename, mode));
+
             for(String s : stringList) {
                 outputStreamWriter.append(s);
             }
@@ -241,6 +250,7 @@ public class FileHelper extends Thread{
         }
         return true;
     }
+
 
 
 }

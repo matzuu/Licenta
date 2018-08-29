@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -315,6 +316,52 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor res = db.rawQuery(MY_QUERY, whereArgs);
 
         return res;
+    }
+
+    public Cursor querykNN(HashSet<String> SetBSSID, Integer orientation, String cluster, Integer degreeNo){
+        // mut din -179,180 in 1,360
+        Integer minOrient = ((orientation + 179)/ (360/degreeNo)) * (360/degreeNo) - 180;
+        Integer maxOrient = minOrient + (360/degreeNo);
+
+
+
+        String[] whereArgs = SetBSSID.toArray(new String[SetBSSID.size() + 1]); //+ degreeCheck +
+        whereArgs[SetBSSID.size()] = cluster;
+        String inClause = whereArgs.toString();
+
+        String MY_QUERY = "SELECT " + TABLE_POSITION + ".* , " + TABLE_MEASUREMENTS + ".ID , " + TABLE_MEASUREMENTS + ".SignalStrength , " + TABLE_MEASUREMENTS + ".BSSID " +
+                " FROM " + TABLE_POSITION +
+                " JOIN " + TABLE_MEASUREMENTS +
+                " ON CoordX = ref_CoordX AND CoordY = ref_CoordY AND Orientation = ref_Orientation AND Cluster = ref_Cluster" +
+                " WHERE BSSID in (" + makeQuestionmarks(SetBSSID.size()) + ") AND  ref_Orientation BETWEEN "+ minOrient+" AND "+ maxOrient +" AND Cluster = ? " +
+                " ORDER BY CoordX ASC , CoordY ASC , Orientation ASC ";
+
+        Log.d("QUERY","in queryKNN \n orinent="+orientation);
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor res = db.rawQuery(MY_QUERY, whereArgs);
+
+        return res;
+    }
+
+    public Cursor querySortedBSSIDOccurrences(HashSet<String> SetBSSID,String cluster, Integer apSize){
+
+        String[] whereArgs = SetBSSID.toArray(new String[SetBSSID.size() + 1]);
+        whereArgs[SetBSSID.size()] = cluster;
+        String inClause = whereArgs.toString();
+
+        String MY_QUERY = "SELECT MACAddress , COUNT(MACAddress) AS value_Occurrence " +
+                " FROM " + TABLE_ROUTER +
+                " JOIN " + TABLE_MEASUREMENTS +
+                " ON BSSID=MACAddress" +
+                " WHERE BSSID in (" + makeQuestionmarks(SetBSSID.size()) + ") AND ref_Cluster = ? " +
+                " GROUP BY MACAddress "+
+                " ORDER BY value_Occurrence DESC"+
+                " LIMIT "+apSize;
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor res = db.rawQuery(MY_QUERY, whereArgs);
+        return res;
+
     }
 
     public Cursor queryAllMeasurementsFromPosition(Position p){

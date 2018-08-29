@@ -96,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
                         Log.d("WRITEFILE","Res2.getcount()= "+res2.getCount());
 
                         List<String> stringsToWrite = new ArrayList<>();
+                        stringsToWrite.add(new String("# dateOutAndroid \r\n"));
                         String s;
                         while (res2.moveToNext()) {
                             s = "ID=" + res2.getInt(res2.getColumnIndex("ID")) + ";" +
@@ -106,8 +107,8 @@ public class MainActivity extends AppCompatActivity {
                             stringsToWrite.add(s);
                         }
                         boolean ok;
-                        ok = FileHelper.writeFile(stringsToWrite, getApplicationContext());
-                        Log.d("WRITEFILE", "writeFile result:+ " + ok);
+                        ok = FileHelper.writeFile(stringsToWrite,"dateAndroidOut.txt", getApplicationContext(),1);
+                        Log.d("WRITEFILE", "writeFile result: " + ok);
                     }
                 };
                 Thread readingThread = new Thread(runnable);

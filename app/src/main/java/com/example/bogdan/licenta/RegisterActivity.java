@@ -233,10 +233,6 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         new InsertDataTask().execute(capturedMeasurementSet);
         capturedMeasurementSet = new HashSet<>();
         textViewTest.setText("C1: "+contor1.toString()+" C2: " +contor2.toString());
-
-
-
-
     }
 
     public void startWifiScan(){
