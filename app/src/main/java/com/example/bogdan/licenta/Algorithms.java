@@ -180,10 +180,10 @@ public class Algorithms {
             }
         });
         */
-        Log.d("Euclid Distance","currentMeasurementArr.size() - "+ currentMeasurementArr.length);
+        //Log.d("Euclid Distance","currentMeasurementArr.size() - "+ currentMeasurementArr.length);
 
         for (Map.Entry<Position,List<Measurement>> entry : posMeasureHASHMAP.entrySet()){
-            Log.d("Euclid Distance","In for: Position - " + entry.getKey().toString());
+            //Log.d("Euclid Distance","In for: Position - " + entry.getKey().toString());
 
 
             measurementList = entry.getValue();
@@ -205,7 +205,7 @@ public class Algorithms {
 
             String currentBSSID = null;
             HashMap<String,BigDecimal> probabilityOfBSSID = new HashMap<>();
-            Log.d("Euclid Distance","measurementList.size() - "+ measurementList.size());
+            //Log.d("Euclid Distance","measurementList.size() - "+ measurementList.size());
 
 
             for (Measurement m : measurementList) {
@@ -289,7 +289,7 @@ public class Algorithms {
                 mean = mean.add(entry2.getValue());
             }
             mean = mean.divide(new BigDecimal(probabilityOfBSSID.size()),16,ROUND_HALF_EVEN);
-            Log.d("Euclid Distance","### Pos: "+ pos+" - meanProbability: "+mean.toString());
+            //Log.d("Euclid Distance","### Pos: "+ pos+" - meanProbability: "+mean.toString());
             positionLikelihoodMap.put(pos,mean);
         }//out of pos for
 
@@ -311,7 +311,7 @@ public class Algorithms {
         LinkedHashMap<Position,BigDecimal> sortedMap = new LinkedHashMap<>();
         for(Map.Entry<Position, BigDecimal> entry:list){
             sortedMap.put(entry.getKey(),entry.getValue());
-            Log.d("ALG",entry.getKey().toString()+" ==== "+entry.getValue());
+            //Log.d("ALG",entry.getKey().toString()+" ==== "+entry.getValue());
         }
 
 

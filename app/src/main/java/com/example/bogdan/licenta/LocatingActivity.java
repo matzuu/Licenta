@@ -182,69 +182,98 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
     public void algorithmKNN(){
         btnSearchkNN.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Boolean isStill = true;
-                        //todo recognition  ActivityRecognitionClient de detectat daca Still / Not Walking
-                        if (isStill == true && lastPos!= null) {
-                            Log.d("kNN","Entering KNN");
-                            StringBuffer strBuffer = new StringBuffer();
-                            List<String> stringsToWrite = new ArrayList<>();
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Runnable runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            Boolean isStill = true;
+                            //todo recognition  ActivityRecognitionClient de detectat daca Still / Not Walking
+                            if (isStill == true && !checkForIncompletedTexts() ) {
+                                Log.d("kNN", "Entering KNN");
+                                StringBuffer strBuffer = new StringBuffer();
+                                List<String> stringsToWrite = new ArrayList<>();
 
-                            Integer k = 3;
-                            Integer degreeNo = 4;
-                            Integer liveMeasurements = 3; // TODO: SCHIMBAT DE CATE ORI SCANEZ
-                            Integer trainingMeasurements = 100;
-                            Integer apSize = 10;
+                                Integer k = 3;
+                                Integer degreeNo = 4;
+                                Integer liveMeasurements = 3; // TODO: SCHIMBAT DE CATE ORI SCANEZ
+                                Integer trainingMeasurements = 100;
+                                Integer apSize = 10;
 
-                            Integer contorLiveMM=0;
-                            HashSet<Measurement> combinetHashSet = new HashSet<>();
+                                Integer contorLiveMM = 0;
+                                HashSet<Measurement> combinedHashSet = new HashSet<>();
 
-                            LinkedHashMap<Position, BigDecimal> estimatedPos;
-                            List<HashSet<Measurement>> onlineScanList = FileHelper.getOnlineScans("android",LocatingActivity.this);
-                            Log.d("kNN","onlineScanList.size(): "+ onlineScanList.size());
-                            if(onlineScanList != null) {
-                                for (HashSet<Measurement> hs : onlineScanList) {
-                                    if(contorLiveMM < liveMeasurements){
-                                        combinetHashSet.addAll(hs);
-                                    }
+                                Integer degree;
+                                //degree = Algorithms.radiansToRounded90Degrees(mOrientation[0]);
+                                degree = Integer.parseInt(editOrientation.getText().toString());
 
-                                    estimatedPos = Algorithms.kNN(hs, lastPos.Orientation, "Acasa", myDb, degreeNo, k, trainingMeasurements, apSize);
+                                LinkedHashMap<Position, BigDecimal> estimatedPos;
+                                List<HashSet<Measurement>> onlineScanList = FileHelper.getOnlineScans("android", LocatingActivity.this);
+                                Log.d("kNN", "onlineScanList.size(): " + onlineScanList.size());
+                                if (onlineScanList != null) {
+                                    //parcurgerea listei cu parametrii X
 
-                                    if (estimatedPos != null) {
-
-                                        String s = "cluster=" + lastPos.Cluster +
-                                                ";pos=" + lastPos.CoordX.toString() + "," + lastPos.CoordY.toString() +
-                                                ";degree=" + lastPos.Orientation.toString() +
-                                                ";degreeNo=" + degreeNo +
-                                                ";neighbours=" + k +
-                                                ";liveMeasurements=" + liveMeasurements +
-                                                ";trainingMeasurements=" + trainingMeasurements +
-                                                ";apSize=" + apSize;
-
-                                        for (LinkedHashMap.Entry<Position, BigDecimal> entry : estimatedPos.entrySet()) {
-                                            strBuffer.append("Pos: " + entry.getKey().toString() + "\n Probability: " + entry.getValue().toString());
-                                            s = s + ";expectedPos=" + entry.getKey().CoordX + "," + entry.getKey().CoordY + ";weight=" + entry.getValue().toString();
+                                    //iau si aplic algoritmul pe *liveMeasurments* din 10, astfel incat sa aplic pe aceleasi masuratori pentru parametrii diferiti
+                                    for (HashSet<Measurement> hs : onlineScanList) {
+                                        contorLiveMM++;
+                                        if (contorLiveMM > 10)/*sau maximul live scanrilor*/{
+                                            contorLiveMM = 1;
                                         }
-                                        stringsToWrite.add(s + "\r\n");
-                                        FileHelper.writeFile(stringsToWrite, "dateKNNresultsTest.txt", getApplicationContext(), 2);
-                                        showMessage("kNN Result", strBuffer.toString());
+                                        if (contorLiveMM < liveMeasurements) {
+                                            combinedHashSet.addAll(hs);
+                                        }
+                                        if (contorLiveMM == liveMeasurements) { //pentru algoritm simulez numarul de scanari pe care l-as face.
+                                            combinedHashSet.addAll(hs);
+                                            Log.d("kNN", "onlineScanList for \n combinedHashSet nr of measurments: " + hs.size());
+                                            estimatedPos = Algorithms.kNN(hs, degree, "Acasa", myDb, degreeNo, k, trainingMeasurements, apSize);
+                                            Log.d("LocatingAct", "Back in locAct from kNN");
+                                            if (estimatedPos != null) {
 
+                                                String s = "cluster=" + editCluster.getText().toString() +
+                                                        ";pos=" + editCoordX.getText().toString() + "," + editCoordY.getText().toString() +
+                                                        ";degree=" + editOrientation.getText().toString() +
+                                                        ";degreeNo=" + degreeNo +
+                                                        ";neighbours=" + k +
+                                                        ";liveMeasurements=" + liveMeasurements +
+                                                        ";trainingMeasurements=" + trainingMeasurements +
+                                                        ";apSize=" + apSize;
+
+                                                /*
+                                                String s = "cluster=" + lastPos.Cluster +
+                                                        ";pos=" + lastPos.CoordX.toString() + "," + lastPos.CoordY.toString() +
+                                                        ";degree=" + lastPos.Orientation.toString() +
+                                                        ";degreeNo=" + degreeNo +
+                                                        ";neighbours=" + k +
+                                                        ";liveMeasurements=" + liveMeasurements +
+                                                        ";trainingMeasurements=" + trainingMeasurements +
+                                                        ";apSize=" + apSize;
+                                                        */
+
+                                                for (LinkedHashMap.Entry<Position, BigDecimal> entry : estimatedPos.entrySet()) {
+                                                    strBuffer.append("Pos: " + entry.getKey().toString() + "\n Probability: " + entry.getValue().toString());
+                                                    s = s + ";expectedPos=" + entry.getKey().CoordX + "," + entry.getKey().CoordY + ";weight=" + entry.getValue().toString();
+                                                }
+                                                stringsToWrite.add(s + "\r\n");
+                                                FileHelper.writeFile(stringsToWrite, "dateKNNresultsTest.txt", getApplicationContext(), 2);
+                                                //showMessage("kNN Result", strBuffer.toString());
+                                            }
+                                        }
                                     }
-                                    Log.d("LocatingAct", "Back in locationAct from kNN");
-
                                 }
                             }
                         }
-                     }
-                }
+                    };
+                    Log.d("THREAD","Starting new thread");
+                    Thread readingThread = new Thread(runnable);
+                    readingThread.start();
+                 }
+            }
         );
     }
 
     public void startWifiScanning(){
         if(checkForIncompletedTexts()){
-            Toast.makeText(LocatingActivity.this, "All position fields must be completed", Toast.LENGTH_LONG).show();
             return;
         }
         else {
@@ -424,7 +453,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        liveMeasurementsTotalSize = 250; // pentru fiecare locatie imi trebuie 50 de teste * masuratori live de la 1 la 10 => imi trebuie 500 pe scanare * 10 scanari
+                        liveMeasurementsTotalSize = 100; // pentru fiecare locatie imi trebuie 50 de teste * masuratori live de la 1 la 10 => imi trebuie 500 pe scanare * 10 scanari
                         liveMeasurementSet = new ArrayList<>();
                         startTime = null;
                         capturedMeasurementSet = new HashSet<>();
@@ -448,7 +477,10 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
     public boolean checkForIncompletedTexts (){
         boolean res = editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editOrientation.getText().toString() == null || editCluster.getText().toString() == null ||
                 editCoordX.getText().toString().compareTo("")==0 || editCoordY.getText().toString().compareTo("")==0 || editOrientation.getText().toString().compareTo("")==0 || editCluster.getText().toString().compareTo("")==0;
-        Log.d("Locating","checkForCompletedTexts result: "+res);
+        Log.d("Locating","checkForIncompletedTexts result: "+res);
+        if (res){
+            Toast.makeText(LocatingActivity.this,"Not all position fields are completed", Toast.LENGTH_SHORT);
+        }
         return res;
     }
 
