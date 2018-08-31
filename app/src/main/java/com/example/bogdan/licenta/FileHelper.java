@@ -306,7 +306,9 @@ public class FileHelper extends Thread{
                 aux = aux.substring(7,aux.length());
                 orientation = Double.parseDouble(aux);
                 orientation =  Math.floor((orientation)/45.0)*45;
-                orientation = orientation - 180; // pentru a muta din intrevalul 0:359.9 in -179.9:180
+                if ( cluster.compareTo("crawDadOnline")==0){
+                    orientation = orientation - 180;// pentru a muta din intrevalul 0:359.9 in -179.9:180
+                }
                 if (orientation == -180)
                     orientation = 180.0;
             }
@@ -412,7 +414,7 @@ public class FileHelper extends Thread{
         ArrayList<String> stringList;
         if (type.compareTo("android")==0){
 
-            stringList = readInternalFile("testScan.txt",context);
+            stringList = readInternalFile("dateAndroidOnline.txt",context);
             stringList = removeComments(stringList);
 
 

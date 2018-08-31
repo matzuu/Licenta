@@ -52,7 +52,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
     TextView textWifiNr;
     TextView textViewTest;
     ImageView imgViewCompass;
-    EditText editCoordX, editCoordY, editLevel, editPosID,editOrientation,editCluster;
+    EditText editCoordX, editCoordY,editOrientation,editCluster;
 
     private SensorManager mSensorManager;
     Sensor mAccelerometer;
@@ -99,11 +99,9 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         textWifiNr = findViewById(R.id.textView_wifiNr);
         editCoordX = (EditText) findViewById(R.id.editText_CoordX);
         editCoordY = (EditText) findViewById(R.id.editText_CoordY);
-        editLevel = (EditText) findViewById(R.id.editText_Level);
         editOrientation = (EditText) findViewById(R.id.editText_Orientation);
         editCluster = (EditText) findViewById(R.id.editText_Cluster);
 
-        textViewTest = findViewById(R.id.textView_test);
 
         //capturedDatabuffer = new StringBuffer();
         //capturedDatabuffer.append("N/A");
@@ -130,7 +128,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                     if (startTime != null && nrOfScans != null && lastPos != null) {
                         capturedMeasurementSet.addAll(getScanResultInfo());
                         timeDifference = SystemClock.elapsedRealtime() - startTime;
-                        textWifiInfo.setText("Seconds elapsed: " + Double.toString(timeDifference / 1000.0));
+                        textWifiInfo.setText("ETA: " + Double.toString(3.25 * 100 - (timeDifference / 1000.0)));
                         nrOfScans++;
                         contor1++;
 
@@ -252,7 +250,6 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                                 lastPos = new Position(
                                         Double.parseDouble(editCoordX.getText().toString()),
                                         Double.parseDouble(editCoordY.getText().toString()),
-                                        Integer.parseInt(editLevel.getText().toString()),
                                         Integer.parseInt(editOrientation.getText().toString()),
                                         editCluster.getText().toString());
                                 Long lastPosID = myDb.insertPosData(lastPos);
@@ -434,7 +431,6 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                         Position pos = new Position(
                                 Double.parseDouble(editCoordX.getText().toString()),
                                 Double.parseDouble(editCoordY.getText().toString()),
-                                Integer.parseInt(editLevel.getText().toString()),
                                 Integer.parseInt(editOrientation.getText().toString()),
                                 editCluster.getText().toString());
 
@@ -458,7 +454,6 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                         Position pos = new Position(
                                 Double.parseDouble(editCoordX.getText().toString()),
                                 Double.parseDouble(editCoordY.getText().toString()),
-                                Integer.parseInt(editLevel.getText().toString()),
                                 Integer.parseInt(editOrientation.getText().toString()),
                                 editCluster.getText().toString());
                         Cursor res = myDb.queryAllMeasurementsFromPosition(pos);
@@ -492,8 +487,8 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
 
     public boolean checkForIncompletedTexts (){
 
-        boolean res = editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editLevel.getText().toString() == null || editOrientation.getText().toString() == null || editCluster.getText().toString() == null ||
-                editCoordX.getText().toString().compareTo("")==0 || editCoordY.getText().toString().compareTo("")==0 || editLevel.getText().toString().compareTo("")==0 || editOrientation.getText().toString().compareTo("")==0 || editCluster.getText().toString().compareTo("")==0;
+        boolean res = editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editOrientation.getText().toString() == null || editCluster.getText().toString() == null ||
+                editCoordX.getText().toString().compareTo("")==0 || editCoordY.getText().toString().compareTo("")==0 || editOrientation.getText().toString().compareTo("")==0 || editCluster.getText().toString().compareTo("")==0;
         Log.d("Register","checkForCompletedTexts result: "+res);
         return res;
     }

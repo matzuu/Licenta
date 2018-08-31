@@ -320,8 +320,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public Cursor querykNN(HashSet<String> SetBSSID, Integer orientation, String cluster, Integer degreeNo){
         // mut din -179,180 in 1,360
-        Integer minOrient = ((orientation + 179)/ (360/degreeNo)) * (360/degreeNo) - 180;
-        Integer maxOrient = minOrient + (360/degreeNo);
+        if (orientation == null || cluster == null || degreeNo == null) {
+            Cursor res = null;
+            return res;
+        }
+        Integer minOrient = ((orientation + 179)/ (360/degreeNo)) * (360/degreeNo) - 179;
+        Integer maxOrient = minOrient + (360/degreeNo) - 1;
 
 
 
@@ -336,7 +340,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 " WHERE BSSID in (" + makeQuestionmarks(SetBSSID.size()) + ") AND  ref_Orientation BETWEEN "+ minOrient+" AND "+ maxOrient +" AND Cluster = ? " +
                 " ORDER BY CoordX ASC , CoordY ASC , Orientation ASC ";
 
-        Log.d("QUERY","in queryKNN \n orinent="+orientation);
+        Log.d("QUERY","in queryKNN \n orienent="+orientation);
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor res = db.rawQuery(MY_QUERY, whereArgs);
 
