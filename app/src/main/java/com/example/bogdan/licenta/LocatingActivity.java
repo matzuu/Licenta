@@ -33,6 +33,7 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -277,10 +278,10 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
                     //todo recognition  ActivityRecognitionClient de detectat daca este in miscare/stationar
                     Boolean isStill = true;
-                    if (isStill == true && !checkForIncompletedTexts() ) {
+                    if (isStill == true ) {
 
                         Log.d("THREAD","Starting new thread");
-                        new threadKNN().execute();
+                        new threadKNN().execute("crawDad");
                         textViewAlgorithmfeedback.setText("DONE!");
 
                     }
@@ -294,91 +295,109 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         );
     }
 
-    private class threadKNN extends AsyncTask< Void,String,Void> {
+    private class threadKNN extends AsyncTask< String,String,Void> {
 
-        protected Void doInBackground(Void... params) {
+        protected Void doInBackground(String... params) {
 
+
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             Log.d("kNN", "Created kNN Thread");
             publishProgress("Started");
 
 
 
-            Integer k = 3;
-            Integer degreeNo = 4; //don
-            Integer liveMeasurements = 4; //don
-            Integer trainingMeasurements = 100; //don
-            Integer apSize = 6; //don
+            Integer k = 1; //don: default 1
+            Integer degreeNo = 1; //don: default 1
+            Integer liveMeasurements = 1; //don: default 1
+            Integer trainingMeasurements = 10; //don
+            Integer apSize = 2; //don
             Integer degree; //don
             //degree = Algorithms.radiansToRounded90Degrees(mOrientation[0]);
             //degree = Integer.parseInt(editOrientation.getText().toString());
+
             Log.d("kNN","k="+k+";degreeNo="+degreeNo+";liveMM="+liveMeasurements+";trainMM="+trainingMeasurements+";apSize="+apSize);
 
             publishProgress("Reading");
-            List<HashSet<Measurement>> onlineScanList = FileHelper.getOnlineScans("android", LocatingActivity.this);
+            List<HashSet<Measurement>> onlineScanList = FileHelper.getOnlineScans(params[0], LocatingActivity.this);
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             Log.d("kNN", "onlineScanList.size(): " + onlineScanList.size());
             if (onlineScanList != null) {
 
                 ArrayList<String> stringToWrite = new ArrayList<>();
                 Integer contorLiveMM = 0;
                 HashSet<Measurement> combinedHashSet = new HashSet<>();
-                LinkedHashMap<Position, BigDecimal> estimatedPos;
+                Position[] estimatedPos;
+                Measurement auxMeasurement;
 
-                //parcurgerea listei cu parametrii X
-                //iau si aplic algoritmul pe *liveMeasurments* din 10, astfel incat sa aplic pe aceleasi masuratori pentru parametrii diferiti
-                for (HashSet<Measurement> hs : onlineScanList) {
-                    contorLiveMM++;
-                    if (contorLiveMM > 10)/*sau maximul live scanrilor*/{
-                        contorLiveMM = 1;
-
-                    }
-                    //Log.d("kNN","contorLiveMM: "+contorLiveMM);
-                    if (contorLiveMM < liveMeasurements) {
-                        combinedHashSet.addAll(hs);
-                    }
-                    if (contorLiveMM == liveMeasurements) { //pentru algoritm simulez numarul de scanari pe care l-as face.
-                        combinedHashSet.addAll(hs);
-                        Log.d("kNN", "combinedHashSet.size(): " + combinedHashSet.size());
-
-                        publishProgress("Working: Calculating kNN");
-                        estimatedPos = Algorithms.kNN(combinedHashSet,"Acasa", myDb, degreeNo, k, trainingMeasurements, apSize);
-                        publishProgress("Working: Getting next scan");
-                        Log.d("kNN","estimatedPos.size()"+ estimatedPos.size());
-                        if (estimatedPos.size()!= 0) {
-
-                            String s = "cluster=" + editCluster.getText().toString() +
-                                    ";pos=" + editCoordX.getText().toString() + "," + editCoordY.getText().toString() +
-                                    ";degree=" + editOrientation.getText().toString() +
-                                    ";degreeNo=" + degreeNo +
-                                    ";neighbours=" + k +
-                                    ";liveMeasurements=" + liveMeasurements +
-                                    ";trainingMeasurements=" + trainingMeasurements +
-                                    ";apSize=" + apSize;
-
-                                                /*
-                                                String s = "cluster=" + lastPos.Cluster +
-                                                        ";pos=" + lastPos.CoordX.toString() + "," + lastPos.CoordY.toString() +
-                                                        ";degree=" + lastPos.Orientation.toString() +
-                                                        ";degreeNo=" + degreeNo +
-                                                        ";neighbours=" + k +
-                                                        ";liveMeasurements=" + liveMeasurements +
-                                                        ";trainingMeasurements=" + trainingMeasurements +
-                                                        ";apSize=" + apSize;
-                                                        */
-
-                            for (LinkedHashMap.Entry<Position, BigDecimal> entry : estimatedPos.entrySet()) {
-                                s = s + ";expectedPos=" + entry.getKey().CoordX + "," + entry.getKey().CoordY + ";weight=" + entry.getValue().toString();
-                            }
-                            stringToWrite.add(s + "\r\n");
-
-
+                for (degreeNo = 1; degreeNo < 4 ; degreeNo++) { //facut pentru a parcurge parametrii
+                    Log.d("kNN","degreeNo: "+degreeNo);
+                    //parcurgerea listei cu parametrii X
+                    //iau si aplic algoritmul pe *liveMeasurments* din 10, astfel incat sa aplic pe aceleasi masuratori pentru parametrii diferiti
+                    for (HashSet<Measurement> hs : onlineScanList) {
+                        contorLiveMM++;
+                        if (contorLiveMM > 10)/*sau maximul live scanrilor*/ {
+                            contorLiveMM = 1;
                             combinedHashSet = new HashSet<>();
                         }
-                    }
-                } //end onlinescan for
-                publishProgress("Writing File");
-                FileHelper.writeFile(stringToWrite, "dateKNNresultsTest.txt", getApplicationContext(), 2);
-                publishProgress("Done");
-            }// end onlinescan if
+                        //Log.d("kNN","contorLiveMM: "+contorLiveMM);
+                        if (contorLiveMM < liveMeasurements) {
+                            combinedHashSet.addAll(hs);
+                        }
+                        if (contorLiveMM == liveMeasurements) { //pentru algoritm simulez numarul de scanari pe care l-as face.
+                            combinedHashSet.addAll(hs);
+                            Log.d("kNN", "combinedHashSet.size(): " + combinedHashSet.size());
+
+
+                            publishProgress("Working: Calculating kNN");
+                            estimatedPos = Algorithms.kNN(combinedHashSet, params[0], myDb, degreeNo, k, trainingMeasurements, apSize);
+                            publishProgress("Working: Getting next scan");
+
+                            if (estimatedPos != null) {
+                                Log.d("kNN", "estimatedPos " + estimatedPos[0].CoordX+","+estimatedPos[0].CoordY + " " + estimatedPos[1].CoordX+","+estimatedPos[1].CoordY);
+                                auxMeasurement = hs.iterator().next();
+                                String s = "cluster=" + auxMeasurement.ref_Cluster +
+                                        ";pos=" + auxMeasurement.ref_CoordX.toString() + "," + auxMeasurement.ref_CoordY.toString() +
+                                        ";degree=" + auxMeasurement.ref_Orientation.toString() +
+                                        ";degreeNo=" + degreeNo +
+                                        ";neighbours=" + k +
+                                        ";liveMeasurements=" + liveMeasurements +
+                                        ";trainingMeasurements=" + trainingMeasurements +
+                                        ";apSize=" + apSize;
+
+                                s += ";estimatedPositions=" + estimatedPos[0] + ";" + estimatedPos[1];
+
+                            /*
+                            for (LinkedHashMap.Entry<Position, BigDecimal> entry : estimatedPos.entrySet()) {
+                                DecimalFormat decimalFormat = new DecimalFormat("###.########");
+                                s = s + ";" + entry.getKey().CoordX + "," + entry.getKey().CoordY +
+                                        ";" + decimalFormat.format(entry.getValue());
+                            }*/
+
+
+                                stringToWrite.add(s + "\r\n");
+
+
+
+                            } else {Log.d("kNN","estimatedPos is NULL!");}
+
+
+                        }
+                    } //end onlinescan for
+                    publishProgress("Writing File");
+                    FileHelper.writeFile(stringToWrite, params[0] + "dateKNNresultsDegreeNr.txt", getApplicationContext(), 2);
+
+                    publishProgress("Done");
+                }// end onlinescan if
+            }
             return null;
         }
         protected void onProgressUpdate(String... progress){
@@ -387,6 +406,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         protected void onPostExecute(Void result) {
 
             showMessage("","Finished!");
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
     }
 
@@ -573,7 +593,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
                     @Override
                     public void onClick(View v) {
                         textWifiInfo.setText("SCAN ETA: Calculating");
-                        liveMeasurementsTotalSize = 500; // pentru fiecare locatie imi trebuie 50 de teste * masuratori live de la 1 la 10 => imi trebuie 500 pentru o locatie, repet scanarea de 10 ori
+                        liveMeasurementsTotalSize = 200; // pentru fiecare locatie imi trebuie 50 de teste * masuratori live de la 1 la 10 => imi trebuie 500 pentru o locatie, repet scanarea de 10 ori
                         liveMeasurementSet = new ArrayList<>();
                         startTime = null;
                         capturedMeasurementSet = new HashSet<>();

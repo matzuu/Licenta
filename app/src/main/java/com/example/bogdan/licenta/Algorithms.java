@@ -27,7 +27,7 @@ public class Algorithms {
 
 
 
-    public static LinkedHashMap<Position,BigDecimal> kNN(HashSet<Measurement> liveMeasurementsSet, String cluster, DatabaseHelper myDb, Integer degreeNo, Integer k, Integer trainingMeasurements, Integer apSize){
+    public static Position[] kNN(HashSet<Measurement> liveMeasurementsSet, String cluster, DatabaseHelper myDb, Integer degreeNo, Integer k, Integer trainingMeasurements, Integer apSize){
 
         if (liveMeasurementsSet.size() < 1){
             return null;
@@ -83,16 +83,16 @@ public class Algorithms {
         if(res2.moveToFirst()) {
 
             pos = new Position();
-            pos.CoordX = res2.getDouble(res2.getColumnIndex("CoordX"));
-            pos.CoordY = res2.getDouble(res2.getColumnIndex("CoordY"));
-            pos.Orientation = res2.getInt(res2.getColumnIndex("Orientation"));
-            pos.Cluster = res2.getString(res2.getColumnIndex("Cluster"));
+            pos.CoordX = res2.getDouble(res2.getColumnIndex("ref_CoordX"));
+            pos.CoordY = res2.getDouble(res2.getColumnIndex("ref_CoordY"));
+            pos.Orientation = res2.getInt(res2.getColumnIndex("ref_Orientation"));
+            pos.Cluster = res2.getString(res2.getColumnIndex("ref_Cluster"));
             m = new Measurement();
             m.id = res2.getInt(res2.getColumnIndex("ID"));
-            m.ref_CoordX = res2.getDouble(res2.getColumnIndex("CoordX"));
-            m.ref_CoordY = res2.getDouble(res2.getColumnIndex("CoordY"));
-            m.ref_Orientation = res2.getInt(res2.getColumnIndex("Orientation"));
-            m.ref_Cluster = res2.getString(res2.getColumnIndex("Cluster"));
+            m.ref_CoordX = res2.getDouble(res2.getColumnIndex("ref_CoordX"));
+            m.ref_CoordY = res2.getDouble(res2.getColumnIndex("ref_CoordY"));
+            m.ref_Orientation = res2.getInt(res2.getColumnIndex("ref_Orientation"));
+            m.ref_Cluster = res2.getString(res2.getColumnIndex("ref_Cluster"));
             m.BSSID = res2.getString(res2.getColumnIndex("BSSID"));
             m.SignalStrength = res2.getInt(res2.getColumnIndex("SignalStrength"));
             measurementList.add(m);
@@ -102,21 +102,20 @@ public class Algorithms {
         }
         while (res2.moveToNext()) {
 
-
             //verific daca citesc alta pozitie
-            if(     (pos.CoordX != res2.getDouble(res2.getColumnIndex ("CoordX" )) ||
-                    pos.CoordY != res2.getDouble(res2.getColumnIndex ("CoordY" )) ||
-                    pos.Orientation != res2.getInt(res2.getColumnIndex ("Orientation" )))
+            if(     (pos.CoordX != res2.getDouble(res2.getColumnIndex ("ref_CoordX" )) ||
+                    pos.CoordY != res2.getDouble(res2.getColumnIndex ("ref_CoordY" )) ||
+                    pos.Orientation != res2.getInt(res2.getColumnIndex ("ref_Orientation" )))
                     ){
                 //Log.d("kNN","pos="+pos.CoordX+","+pos.CoordY+";Orient="+pos.Orientation+";measureList.size()="+measurementList.size());
                 //adaug poz de dinainte si measureliste-ul
                 posMeasureHashMap.put(pos,measurementList);
                 //ma pregatesc ptr urmatoarea poz
                 pos = new Position();
-                pos.CoordX = res2.getDouble(res2.getColumnIndex ("CoordX" ));
-                pos.CoordY = res2.getDouble(res2.getColumnIndex ("CoordY" ));
-                pos.Orientation = res2.getInt(res2.getColumnIndex ("Orientation" ));
-                pos.Cluster = res2.getString(res2.getColumnIndex ("Cluster" ));
+                pos.CoordX = res2.getDouble(res2.getColumnIndex ("ref_CoordX" ));
+                pos.CoordY = res2.getDouble(res2.getColumnIndex ("ref_CoordY" ));
+                pos.Orientation = res2.getInt(res2.getColumnIndex ("ref_Orientation" ));
+                pos.Cluster = res2.getString(res2.getColumnIndex ("ref_Cluster" ));
                 measurementList = new ArrayList<>();
 
                 //resetez vectorul cu BSSID
@@ -133,10 +132,10 @@ public class Algorithms {
             if(macAddressFrecvMap.get(m.BSSID) < trainingMeasurements ){ //trebuie < strict, nu <=
 
                 m.id = res2.getInt(res2.getColumnIndex("ID"));
-                m.ref_CoordX = res2.getDouble(res2.getColumnIndex("CoordX"));
-                m.ref_CoordY = res2.getDouble(res2.getColumnIndex("CoordY"));
-                m.ref_Orientation = res2.getInt(res2.getColumnIndex("Orientation"));
-                m.ref_Cluster = res2.getString(res2.getColumnIndex("Cluster"));
+                m.ref_CoordX = res2.getDouble(res2.getColumnIndex("ref_CoordX"));
+                m.ref_CoordY = res2.getDouble(res2.getColumnIndex("ref_CoordY"));
+                m.ref_Orientation = res2.getInt(res2.getColumnIndex("ref_Orientation"));
+                m.ref_Cluster = res2.getString(res2.getColumnIndex("ref_Cluster"));
                 m.SignalStrength = res2.getInt(res2.getColumnIndex("SignalStrength"));
 
                 measurementList.add(m);
@@ -146,33 +145,67 @@ public class Algorithms {
 
         posMeasureHashMap.put(pos,measurementList);
         //Log.d("ALG","Queried Measurement Map: \n" + buffer.toString()); //spam
-        Log.d("ALG"," \n PosMeasureHASHMAP.size(): "+posMeasureHashMap.size()+"\n Total mm queried: "+nrOfMeasurements);
+        Log.d("ALG","Finished cursor read: \n PosMeasHASHMAP.size(): "+posMeasureHashMap.size()+"\n Total mm queried: "+nrOfMeasurements);
         //poz cititite; trebuie gasita cea mai similara poz;
 
         //HashMap<Position,BigDecimal> posEuclidianDistance = calculateFreqDistance(posMeasureHashMap,liveMeasurementsSet);
-        HashMap<Position,BigDecimal> posEuclidianDistance = calculateEuclidDistance(posMeasureHashMap,liveMeasurementsSet);
-        Log.d("ALG","Exited calculatePD");
-        Log.d("ALG","Sorting the map");
-        LinkedHashMap<Position,BigDecimal> sortedMap = sortByValue(posEuclidianDistance,0); // 1 for desc
-        LinkedHashMap<Position,BigDecimal> returnedMap = new LinkedHashMap<>();
+        HashMap<Position,Double> posEuclidianDistance = calculateEuclidDistance(posMeasureHashMap,liveMeasurementsSet);
+        Log.d("ALG","Exited calculateED \n Sorting the map");
+        LinkedHashMap<Position,Double> sortedMap = sortByDoubleValue(posEuclidianDistance,0); // 1 for desc
+        LinkedHashMap<Position,Double> returnedMap = new LinkedHashMap<>();
+        Position retPos = new Position(0.0,0.0,0,"resultKNN");
+        Position retWeightedPos = new Position(0.0,0.0,0,"resultKNN");
         Integer contor = 0;
-        for (LinkedHashMap.Entry<Position,BigDecimal> entry : sortedMap.entrySet()) {
+        Double totalWeight = 0.0;
+
+
+
+        for (LinkedHashMap.Entry<Position,Double> entry : sortedMap.entrySet()) {
             returnedMap.put(entry.getKey(),entry.getValue());
+            retPos.CoordX +=entry.getKey().CoordX;
+            retPos.CoordY +=entry.getKey().CoordY;
+
+            totalWeight +=entry.getValue();
             contor++;
-            Log.d("ALG3","Contor PD return: "+contor);
             if(contor >= k )//de inlocuit cu k
                 break;
         }
-        //Position expectedPos = new Position();
+        retPos.CoordX = retPos.CoordX/k;
+        retPos.CoordY = retPos.CoordY/k;
+
+        contor = 0;
+        if (sortedMap.size()>1 && k > 1) {
+            for (LinkedHashMap.Entry<Position, Double> entry : sortedMap.entrySet()) {
+                retWeightedPos.CoordX += (1 - (entry.getValue() / totalWeight)) * entry.getKey().CoordX;
+                retWeightedPos.CoordY += (1 - (entry.getValue() / totalWeight)) * entry.getKey().CoordY;
+                contor++;
+                if (contor >= k)//de inlocuit cu k
+                    break;
+            }
+        } else {
+            retWeightedPos.CoordX = retPos.CoordX;
+            retWeightedPos.CoordY = retPos.CoordY;
+
+        }
+
+
+
+
+
+        //return returnedMap;
+        Position[] retArr = new Position[2];
+        retArr[0] = retPos;
+        retArr[1] = retWeightedPos;
+
         Log.d("ALG","Exiting kNN");
-        return returnedMap;
+        return retArr;
     }
 
 
-    public static HashMap<Position,BigDecimal> calculateEuclidDistance(HashMap<Position,List<Measurement>> posMeasureHASHMAP, HashSet<Measurement> liveMeasurementSet){
+    public static HashMap<Position,Double> calculateEuclidDistance(HashMap<Position,List<Measurement>> posMeasureHASHMAP, HashSet<Measurement> liveMeasurementSet){
 
         Position pos;
-        HashMap<Position,BigDecimal> positionLikelihoodMap = new HashMap<>();
+        HashMap<Position,Double> positionLikelihoodMap = new HashMap<>();
         //setul e folosit doar aici
         //Sortez dupa BSSID
         Measurement[] liveMeasurmentArr =  liveMeasurementSet.toArray(new Measurement[liveMeasurementSet.size()]);
@@ -305,14 +338,17 @@ public class Algorithms {
             Log.d("ALG2","\nPos Probability : \n" +pos.toString()+" \n Prod: "+prod);
             positionLikelihoodMap.put(pos,prod);
             */
-            BigDecimal mean = new BigDecimal(0.0);
-            for (Map.Entry<String,Double> entry2 : distanceOfBSSID.entrySet()) {
-                Log.d("Euclid Distance","BSSID: "+entry2.getKey() +" - Distance: "+entry2.getValue().toString());
-                mean = mean.add(new BigDecimal(entry2.getValue()));
+            //Log.d("Euclid Distance","distanceOfBSSID.size(): "+distanceOfBSSID.size());
+            if(distanceOfBSSID.size()>0) { //evit impartirea la 0, nu am gasit nimic pentru o anumita pozitie
+                double mean = 0.0;
+                for (Map.Entry<String, Double> entry2 : distanceOfBSSID.entrySet()) {
+                    //Log.d("Euclid Distance", "BSSID: " + entry2.getKey() + " - Distance: " + entry2.getValue().toString());
+                    mean += entry2.getValue();
+                }
+                mean = mean/distanceOfBSSID.size();
+                //Log.d("Euclid Distance","### Pos: "+ pos+" - meanProbability: "+mean.toString());
+                positionLikelihoodMap.put(pos, mean);
             }
-            mean = mean.divide(new BigDecimal(distanceOfBSSID.size()),16,ROUND_HALF_EVEN);
-            //Log.d("Euclid Distance","### Pos: "+ pos+" - meanProbability: "+mean.toString());
-            positionLikelihoodMap.put(pos,mean);
         }//out of pos for
 
         return positionLikelihoodMap;
@@ -453,7 +489,7 @@ public class Algorithms {
         return positionLikelihoodMap;
     }
 
-    private static LinkedHashMap<Position, BigDecimal> sortByValue(Map<Position, BigDecimal> unsortMap, final int type) {
+    private static LinkedHashMap<Position, BigDecimal> sortByBigDecimalValue(Map<Position, BigDecimal> unsortMap, final int type) {
 
         //type = 0 => ASC type == 1 => DESC
         Set<Map.Entry<Position, BigDecimal>> set = unsortMap.entrySet();
@@ -476,6 +512,30 @@ public class Algorithms {
         }
 
 
+        return sortedMap;
+    }
+
+    private static LinkedHashMap<Position, Double> sortByDoubleValue(Map<Position, Double> unsortMap, final int type) {
+
+        //type = 0 => ASC type == 1 => DESC
+        Set<Map.Entry<Position, Double>> set = unsortMap.entrySet();
+        List<Map.Entry<Position, Double>> list = new ArrayList<>(set);
+        Collections.sort( list, new Comparator<Map.Entry<Position, Double>>()
+        {
+            public int compare( Map.Entry<Position, Double> o1, Map.Entry<Position, Double> o2 )
+            {
+                if ( type == 1 )
+                    return (o2.getValue()).compareTo( o1.getValue() );
+                else
+                    return (o1.getValue()).compareTo( o2.getValue() );
+            }
+        } );
+
+        LinkedHashMap<Position,Double> sortedMap = new LinkedHashMap<>();
+        for(Map.Entry<Position, Double> entry:list){
+            sortedMap.put(entry.getKey(),entry.getValue());
+            //Log.d("ALG",entry.getKey().toString()+" ==== "+entry.getValue());
+        }
         return sortedMap;
     }
 

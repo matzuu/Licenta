@@ -333,12 +333,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         whereArgs[SetBSSID.size()] = cluster;
         String inClause = whereArgs.toString();
 
-        String MY_QUERY = "SELECT " + TABLE_POSITION + ".* , " + TABLE_MEASUREMENTS + ".ID , " + TABLE_MEASUREMENTS + ".SignalStrength , " + TABLE_MEASUREMENTS + ".BSSID " +
-                " FROM " + TABLE_POSITION +
-                " JOIN " + TABLE_MEASUREMENTS +
-                " ON CoordX = ref_CoordX AND CoordY = ref_CoordY AND Orientation = ref_Orientation AND Cluster = ref_Cluster" +
-                " WHERE BSSID in (" + makeQuestionmarks(SetBSSID.size()) + ") AND  ref_Orientation BETWEEN "+ minOrient+" AND "+ maxOrient +" AND Cluster = ? " +
-                " ORDER BY CoordX ASC , CoordY ASC , Orientation ASC ";
+        String MY_QUERY = "SELECT * "+
+                " FROM " + TABLE_MEASUREMENTS +
+                " WHERE BSSID in (" + makeQuestionmarks(SetBSSID.size()) + ") AND  ref_Orientation BETWEEN "+ minOrient+" AND "+ maxOrient +" AND ref_Cluster = ? " +
+                " ORDER BY ref_CoordX ASC , ref_CoordY ASC , ref_Orientation ASC ";
 
         Log.d("QUERY","in queryKNN \n orienent="+orientation);
         SQLiteDatabase db = this.getWritableDatabase();

@@ -27,13 +27,11 @@ public class FileHelper extends Thread{
 
     }
 
-
-
-    public static List<String> readAssetsFile(Context context){
+    public static ArrayList<String> readAssetsFile(Context context,String filename){
         String line;
-        List<String> rezList = new ArrayList<>();
+        ArrayList<String> rezList = new ArrayList<>();
         try {
-            InputStreamReader inputStreamReader = new InputStreamReader(context.getAssets().open("crawdadOfflineTraceTest"));
+            InputStreamReader inputStreamReader = new InputStreamReader(context.getAssets().open(filename));
             BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
             while ( (line = bufferedReader.readLine()) != null )
             {
@@ -169,7 +167,7 @@ public class FileHelper extends Thread{
 
             Log.d("parseString", "\n linia: "+ noLine +" \n " + line + " \n");
             Log.d("parseString", "marimea mac: " + macAddressSet.size());
-            mPos = Pattern.compile("\\d\\.\\d,").matcher(line);
+            mPos = Pattern.compile("\\d*\\.\\d*,").matcher(line);
             coordx = null;
             coordy = null;
             if (mPos.find()) {
@@ -184,7 +182,7 @@ public class FileHelper extends Thread{
                 coordy = Double.parseDouble(aux);
             }
 
-            mPos = Pattern.compile("degree=\\d.\\d").matcher(line);
+            mPos = Pattern.compile("degree=\\d*\\.\\d*").matcher(line);
             orientation=null;
             if (mPos.find()){
                 aux = mPos.group();
@@ -217,7 +215,7 @@ public class FileHelper extends Thread{
                 }
 
                 for (String s : auxLine) {
-                    Log.d("parseString", "Stringul s: " + s);
+                    //Log.d("parseString", "Stringul s: " + s);
                     mMacAddress = Pattern.compile("\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}").matcher(s);
                     mMeasurement = Pattern.compile("-\\d{2}").matcher(s);
                     if (mMacAddress.find()) {
@@ -249,7 +247,114 @@ public class FileHelper extends Thread{
         return retValue;
     }
 
-    public static ArrayList<HashSet<Measurement>> parseString2 (ArrayList<String> stringList){
+    public static ArrayList<HashSet<Measurement>> parseStringOnlineCrawdad (List<String> stringList) {
+
+        ArrayList<HashSet<Measurement>> retList = new ArrayList<>();
+        Matcher mPos;
+        Position pos = new Position();
+        Double coordx;
+        Double coordy;
+        Double orientation;
+        Matcher mMacAddress;
+        HashSet<String> macAddressSet = new HashSet<>();
+        String macAddressAux;
+        Matcher mMeasurement;
+        HashSet<Measurement> measurementHashSet = new HashSet<>();
+        Measurement measurement = new Measurement();
+        List<String> auxLine = new ArrayList<>();
+        String aux = "";
+        boolean retValue = false;
+
+        Matcher mMacAddressSig;
+
+        long lastPosID = -2;
+        Integer noLine = 0;
+        for (String line : stringList) {
+            noLine++;
+
+            Log.d("parseString", "\n linia: "+ noLine +" \n " + line + " \n");
+            Log.d("parseString", "marimea mac: " + macAddressSet.size());
+            mPos = Pattern.compile("\\d*\\.\\d*,").matcher(line);
+            coordx = null;
+            coordy = null;
+            if (mPos.find()) {
+                aux = mPos.group();
+                aux = aux.substring(0, aux.length() - 1);
+                Log.d("parseString", "INCERC COORDX " + aux);
+                coordx = Double.parseDouble(aux);
+            }
+            if (mPos.find()) {
+                aux = mPos.group();
+                aux = aux.substring(0, aux.length() - 1);
+                coordy = Double.parseDouble(aux);
+            }
+
+            mPos = Pattern.compile("degree=\\d*\\.\\d*").matcher(line);
+            orientation=null;
+            if (mPos.find()){
+                aux = mPos.group();
+                aux = aux.substring(7,aux.length());
+                orientation = Double.parseDouble(aux);
+                orientation =  Math.floor((orientation)/45.0)*45;
+                orientation = orientation - 180; // pentru a muta din intrevalul 0:359.9 in -179.9:180
+                if (orientation == -180)
+                    orientation = 180.0;
+            }
+
+
+            //ma asigur ca pe fiecare linie gasesc doua Double de pozitie.. in caz contrar ignor linia;
+            if (coordx != null && coordy != null) {
+                if (coordx != pos.CoordX || coordy != pos.CoordY) {
+                    pos.CoordX = coordy;
+                    pos.CoordY = coordy;
+                    pos.Level = 0;
+                    pos.Orientation = orientation.intValue();
+                    pos.Cluster = "crawDadOnline";
+                    Log.d("parseString","inserting position: "+pos.toString());
+
+                }
+                //gasesc toate intensitatile de semnal asociate cu o adresa mac
+                auxLine = new ArrayList<>();
+                mMacAddressSig = Pattern.compile("\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}=-\\d{2}").matcher(line);
+                while (mMacAddressSig.find()) {
+                    auxLine.add(mMacAddressSig.group());
+                }
+                measurementHashSet = new HashSet<>();
+                for (String s : auxLine) {
+                    //Log.d("parseString", "Stringul s: " + s);
+                    mMacAddress = Pattern.compile("\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}:\\w{2}").matcher(s);
+                    mMeasurement = Pattern.compile("-\\d{2}").matcher(s);
+                    if (mMacAddress.find()) {
+                        macAddressAux = mMacAddress.group();
+                        macAddressSet.add(macAddressAux);
+
+                        if (mMeasurement.find()) {
+                            measurement = new Measurement();
+                            measurement.SignalStrength = Integer.parseInt(mMeasurement.group());
+                            measurement.ref_CoordX = pos.CoordX;
+                            measurement.ref_CoordY = pos.CoordY;
+                            measurement.ref_Orientation=pos.Orientation;
+                            measurement.ref_Cluster = pos.Cluster;
+                            measurement.BSSID = macAddressAux;
+                            measurementHashSet.add(measurement);
+                            //Log.d("parseString", "marimea MeasurementSet: " + measurementHashSet.size());
+                        }
+                    }
+                }//end aux for
+
+                retList.add(measurementHashSet);
+            }
+        }//end for
+        Log.d("parseString", "sizeOfmacAddressSet: " + macAddressSet.size() + " \n sizeOfMeasurementHashSet " + measurementHashSet.size());
+
+
+        //Pozitie
+        //Router Sgl Str
+
+        return retList;
+    }
+
+    public static ArrayList<HashSet<Measurement>> parseStringOnlineAndroid(ArrayList<String> stringList){
         ArrayList<HashSet<Measurement>> retList = new ArrayList<>();
 
         String cluster;
@@ -283,7 +388,7 @@ public class FileHelper extends Thread{
             if(cluster == null){
                 cluster = "crawDadOnline";
             }
-            mMatcher = Pattern.compile("\\d\\.\\d,").matcher(line);
+            mMatcher = Pattern.compile("\\d*\\.\\d*,").matcher(line);
             coordx = null;
             if (mMatcher.find()) {
                 aux = mMatcher.group();
@@ -292,7 +397,7 @@ public class FileHelper extends Thread{
             }
 
             coordy = null;
-            mMatcher = Pattern.compile(",\\d\\.\\d").matcher(line);
+            mMatcher = Pattern.compile(",\\d*\\.\\d*").matcher(line);
             if (mMatcher.find()) {
                 aux = mMatcher.group();
                 aux = aux.substring(1, aux.length());
@@ -412,17 +517,22 @@ public class FileHelper extends Thread{
 
         ArrayList<HashSet<Measurement>> retList = null;
         ArrayList<String> stringList;
-        if (type.compareTo("android")==0){
+        if (type.compareTo("Acasa")==0){
 
             stringList = readInternalFile("dateAndroidOnline.txt",context);
             stringList = removeComments(stringList);
 
 
-            retList = parseString2(stringList);
+            retList = parseStringOnlineAndroid(stringList);
 
         }
 
-        if(type.compareTo("crawdad")==0){
+        if(type.compareTo("crawDad")==0){
+
+            stringList = readAssetsFile(context,"online.final.trace.txt");
+            stringList = removeComments(stringList);
+
+            retList = parseStringOnlineCrawdad(stringList);
 
         }
 
