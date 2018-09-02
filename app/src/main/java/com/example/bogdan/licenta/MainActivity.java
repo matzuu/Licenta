@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     Button btnCountSig;
     Button btnRegisterActivity;
     Button btnLocatingActivity;
+    Button btnDelete;
 
 
     @Override
@@ -36,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         btnViewAllPosFromCluster = (Button) findViewById(R.id.button_viewAll);
         btnRead = (Button) findViewById(R.id.button_read);
         btnWrite = (Button) findViewById(R.id.button_write);
+        btnDelete = (Button) findViewById(R.id.button_deleteCluster);
         btnsigStrView = (Button) findViewById(R.id.button_SigStrView);
         btnCountSig = (Button) findViewById(R.id.button_CountSig);
         btnRegisterActivity = (Button) findViewById(R.id.button_toRegisterActivity);
@@ -45,10 +47,12 @@ public class MainActivity extends AppCompatActivity {
         viewAllPosFromCluster();
         ReadingThread();
         WritingThread();
+        DeletingThread();
         viewSigStrCount();
         CountSig();
         toRegisterActivity();
         toLocatingActivity();
+
 
     }
 
@@ -115,6 +119,27 @@ public class MainActivity extends AppCompatActivity {
                 readingThread.start();
                 }
             }
+        );
+    }
+
+    public void DeletingThread() {
+        btnDelete.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Runnable runnable = new Runnable() {
+                            @Override
+                            public void run() {
+                                Log.d("DELETE", "Prestergere2");
+                                myDb.deleteCluster("crawDad");
+
+                            }
+                        };
+                        Log.d("DELETE", "Prestergere");
+                        Thread readingThread = new Thread(runnable);
+                        readingThread.start();
+                    }
+                }
         );
     }
 

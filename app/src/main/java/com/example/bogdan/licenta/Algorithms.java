@@ -182,6 +182,9 @@ public class Algorithms {
                 if (contor >= k)//de inlocuit cu k
                     break;
             }
+            retWeightedPos.CoordX = retWeightedPos.CoordX/k;
+            retWeightedPos.CoordY = retWeightedPos.CoordY/k;
+
         } else {
             retWeightedPos.CoordX = retPos.CoordX;
             retWeightedPos.CoordY = retPos.CoordY;
@@ -190,6 +193,124 @@ public class Algorithms {
 
 
 
+
+
+        //return returnedMap;
+        Position[] retArr = new Position[2];
+        retArr[0] = retPos;
+        retArr[1] = retWeightedPos;
+
+        Log.d("ALG","Exiting kNN");
+        return retArr;
+    }
+
+    public static Position[] kNN2(HashSet<Measurement> offlineMeasurementSet,HashSet<Measurement> liveMeasurementsSet, String cluster, Integer degreeNo, Integer k, Integer trainingMeasurements, Integer apSize){
+
+        if (liveMeasurementsSet.size() < 1){
+            return null;
+        }
+        Log.d("ALG","Entering Algorithm kNN");
+        Map<String,Integer> macAddressFrecvMap = new HashMap<>();
+        HashMap<Position,List<Measurement>> posMeasureHashMap = new HashMap<>();
+        Position pos = null;
+        List<Measurement> measurementList = new ArrayList<>();
+        Integer orientation = null;
+
+        HashSet<String> macAddressSet = new HashSet<>();
+        //imi iau toaate BSSID-urile din Measurment-ul facut recent.
+
+        for (Measurement measurement : liveMeasurementsSet) {
+            macAddressSet.add(measurement.BSSID);
+            macAddressFrecvMap.put(measurement.BSSID,0);
+            orientation= measurement.ref_Orientation;
+        }
+
+        //Log.d("ALG","mm orientation: "+orientation);
+
+
+
+        Integer minOrient = ((orientation + 179)/ (360/degreeNo)) * (360/degreeNo) - 179;
+        Integer maxOrient = minOrient + (360/degreeNo) - 1;
+
+        for ( Measurement m :offlineMeasurementSet){
+                if (m.ref_Orientation >=minOrient && m.ref_Orientation <= maxOrient) {//
+                    if (pos != null) {
+                        if (!(pos.CoordX-m.ref_CoordX==0) || !(pos.CoordY-m.ref_CoordY==0)) {//pos s-a schimbat
+                            //Log.d("ALG","m = "+m.ref_CoordX+" "+m.ref_CoordY+" "+m.BSSID);
+                            posMeasureHashMap.put(pos,measurementList);
+                            measurementList = new ArrayList<>();
+                            pos = new Position(m.ref_CoordX, m.ref_CoordY, orientation, "crawDadResult"); //toate ar trebuii sa aiba aceeasi orientare
+
+                            for (Map.Entry<String, Integer> entry : macAddressFrecvMap.entrySet())
+                            {
+                                entry.setValue(0);
+                            }
+
+                        }
+
+                        if(macAddressFrecvMap.containsKey(m.BSSID))
+                            if(macAddressFrecvMap.get(m.BSSID)<trainingMeasurements){
+                                measurementList.add(m);
+                                macAddressFrecvMap.put(m.BSSID,macAddressFrecvMap.get(m.BSSID)+1);
+                            }
+                    } else {
+                        if(macAddressFrecvMap.containsKey(m.BSSID)) {
+                            pos = new Position(m.ref_CoordX, m.ref_CoordY, orientation, "crawDadResult");
+                            measurementList.add(m);
+                            macAddressFrecvMap.put(m.BSSID, macAddressFrecvMap.get(m.BSSID) + 1);
+                        }
+                    }
+                }
+        }
+        posMeasureHashMap.put(pos,measurementList);
+        Log.d("ALG","Finished cursor read: \n PosMeasHASHMAP.size(): "+posMeasureHashMap.size());
+        //poz cititite; trebuie gasita cea mai similara poz;
+
+        //HashMap<Position,BigDecimal> posEuclidianDistance = calculateFreqDistance(posMeasureHashMap,liveMeasurementsSet);
+        HashMap<Position,Double> posEuclidianDistance = calculateEuclidDistance(posMeasureHashMap,liveMeasurementsSet);
+        Log.d("ALG","Exited calculateED \n Sorting the map, size:"+posEuclidianDistance.size());
+        LinkedHashMap<Position,Double> sortedMap = sortByDoubleValue(posEuclidianDistance,0); // 1 for desc
+        LinkedHashMap<Position,Double> returnedMap = new LinkedHashMap<>();
+        Position retPos = new Position(0.0,0.0,0,"resultKNN");
+        Position retWeightedPos = new Position(0.0,0.0,0,"resultKNN");
+        Integer contor = 0;
+        Double totalWeight = 0.0;
+
+
+
+        for (LinkedHashMap.Entry<Position,Double> entry : sortedMap.entrySet()) {
+            returnedMap.put(entry.getKey(),entry.getValue());
+            retPos.CoordX +=entry.getKey().CoordX;
+            retPos.CoordY +=entry.getKey().CoordY;
+
+            totalWeight +=entry.getValue();
+            contor++;
+            if(contor >= k )//de inlocuit cu k
+                break;
+        }
+        retPos.CoordX = retPos.CoordX/k;
+        retPos.CoordY = retPos.CoordY/k;
+
+        contor = 0;
+        if (sortedMap.size()>1 && k > 1) {
+            for (LinkedHashMap.Entry<Position, Double> entry : sortedMap.entrySet()) {
+                retWeightedPos.CoordX += (1 - (entry.getValue() / totalWeight)) * entry.getKey().CoordX;
+                retWeightedPos.CoordY += (1 - (entry.getValue() / totalWeight)) * entry.getKey().CoordY;
+                contor++;
+                if (contor >= k)//de inlocuit cu k
+                    break;
+            }
+            retWeightedPos.CoordX = retWeightedPos.CoordX/k;
+            retWeightedPos.CoordY = retWeightedPos.CoordY/k;
+
+            if (retWeightedPos.CoordX.isNaN() || retWeightedPos.CoordY.isNaN()){
+                Log.d("kNN","retWeightedPos is NaN!");
+            }
+
+        } else {
+            retWeightedPos.CoordX = retPos.CoordX;
+            retWeightedPos.CoordY = retPos.CoordY;
+        }
 
 
         //return returnedMap;
@@ -298,7 +419,7 @@ public class Algorithms {
 
                                 //Log.d("ED", "probDbBSSID.size()" + probOfSSsForThisDbBSSID.size() + "  probLiveBSSID.size()" + probOfSSsForThisLiveBSSID.size());
                                 //Log.d("ED", "dbMean: " + dbMeanForThisBSSID + "   dbLive: " + liveMeanForThisBSSID);
-                                distanceOfBSSID.put(currentBSSID, Math.abs(dbMeanForThisBSSID - liveMeanForThisBSSID));
+                                distanceOfBSSID.put(currentBSSID, Math.pow((dbMeanForThisBSSID - liveMeanForThisBSSID),2));
                                 //////////probabilityOfBSSID.put(currentBSSID, liveMeanForThisBSSID.divide(new BigDecimal(probOfSSsForThisLiveBSSID.size()), 16, ROUND_HALF_EVEN));
                                 //Log.d("Euclid Distance", "probb Of BSSID: " +currentBSSID+ " = " + sum.divide(new BigDecimal(probOfSSsForThisBSSID.size()),16,ROUND_HALF_EVEN));
 
@@ -345,7 +466,7 @@ public class Algorithms {
                     //Log.d("Euclid Distance", "BSSID: " + entry2.getKey() + " - Distance: " + entry2.getValue().toString());
                     mean += entry2.getValue();
                 }
-                mean = mean/distanceOfBSSID.size();
+                mean = Math.sqrt(mean);
                 //Log.d("Euclid Distance","### Pos: "+ pos+" - meanProbability: "+mean.toString());
                 positionLikelihoodMap.put(pos, mean);
             }

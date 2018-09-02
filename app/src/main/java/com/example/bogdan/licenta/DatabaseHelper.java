@@ -454,6 +454,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.delete(TABLE_MEASUREMENTS, "ref_CoordX = ? AND ref_CoordY = ? AND ref_Orientation = ? AND ref_Cluster = ? ",whereArgs);
 
     }
+
+    public Integer deleteCluster(String cluster){
+        String[] whereArgs = new String[]{cluster};
+        Log.d("QUERY", "deleteMeasurementAtPosData whereArgs: " + whereArgs[0]);
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_MEASUREMENTS, " ref_Cluster = ? ",whereArgs);
+        db.delete(TABLE_POSITION,"Cluster = ? ",whereArgs);
+        return 1;
+    }
 }
 
 

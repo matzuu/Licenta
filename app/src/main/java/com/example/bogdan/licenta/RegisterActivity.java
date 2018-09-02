@@ -50,7 +50,6 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
     TextView textViewCompass3;
     TextView textWifiInfo;
     TextView textWifiNr;
-    TextView textViewTest;
     ImageView imgViewCompass;
     EditText editCoordX, editCoordY,editOrientation,editCluster;
 
@@ -66,8 +65,6 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
     DatabaseHelper myDb;
     Position lastPos;
     Integer nrOfScans;
-    Integer contor1;
-    Integer contor2;
     //StringBuffer capturedDatabuffer;
     HashSet<Measurement> capturedMeasurementSet;
 
@@ -111,9 +108,6 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
-        contor1 = 0;
-        contor2 = 0;
-
 
 
 
@@ -128,11 +122,11 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                     if (startTime != null && nrOfScans != null && lastPos != null) {
                         capturedMeasurementSet.addAll(getScanResultInfo());
                         timeDifference = SystemClock.elapsedRealtime() - startTime;
-                        textWifiInfo.setText("ETA: " + Double.toString(3.25 * 100 - (timeDifference / 1000.0)));
+                        textWifiInfo.setText("ETA: " + Double.toString(3.25 * 5 - (timeDifference / 1000.0)));
                         nrOfScans++;
-                        contor1++;
 
-                        if (nrOfScans < 100) {
+
+                        if (nrOfScans < 5) {
                             mWifiManager.startScan();
                         } else {
                             nrOfScans = null;
@@ -230,7 +224,6 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
 
         new InsertDataTask().execute(capturedMeasurementSet);
         capturedMeasurementSet = new HashSet<>();
-        textViewTest.setText("C1: "+contor1.toString()+" C2: " +contor2.toString());
     }
 
     public void startWifiScan(){
@@ -298,7 +291,6 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         Log.d("WIFI","nrOfScans: "+nrOfScans);
         Log.d("WIFI","initializat ScanResult List: "+ wifiScanList.size());
         textWifiNr.setText("Nr of detected APs: "+ wifiScanList.size());
-        contor2 += wifiScanList.size();
         for (ScanResult scanResult : wifiScanList) {
             Measurement measurement = new Measurement();
             measurement.BSSID = scanResult.BSSID;

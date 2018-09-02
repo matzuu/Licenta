@@ -37,6 +37,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 
 public class LocatingActivity extends AppCompatActivity implements SensorEventListener {
@@ -279,10 +281,9 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
                     //todo recognition  ActivityRecognitionClient de detectat daca este in miscare/stationar
                     Boolean isStill = true;
                     if (isStill == true ) {
-
+                        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                         Log.d("THREAD","Starting new thread");
-                        new threadKNN().execute("crawDad");
-                        textViewAlgorithmfeedback.setText("DONE!");
+                        new threadKNN().execute("Acasa");
 
                     }
 
@@ -300,8 +301,9 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         protected Void doInBackground(String... params) {
 
 
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
             try {
+
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -312,18 +314,21 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
 
             Integer k = 1; //don: default 1
-            Integer degreeNo = 1; //don: default 1
-            Integer liveMeasurements = 1; //don: default 1
-            Integer trainingMeasurements = 10; //don
-            Integer apSize = 2; //don
+            Integer degreeNo = 1; //don: default 4
+            Integer liveMeasurements = 3; //don: default 3
+            Integer trainingMeasurements = 20; //don default 20
+            Integer apSize = 6; //don default 6
             Integer degree; //don
             //degree = Algorithms.radiansToRounded90Degrees(mOrientation[0]);
             //degree = Integer.parseInt(editOrientation.getText().toString());
 
             Log.d("kNN","k="+k+";degreeNo="+degreeNo+";liveMM="+liveMeasurements+";trainMM="+trainingMeasurements+";apSize="+apSize);
-
+            LinkedHashSet<Measurement> offlineScanSet = null;
             publishProgress("Reading");
-            List<HashSet<Measurement>> onlineScanList = FileHelper.getOnlineScans(params[0], LocatingActivity.this);
+            if (params[0].compareTo("crawDad")==0){
+                offlineScanSet = FileHelper.getOfflineScans(params[0], LocatingActivity.this);
+            }
+            ArrayList<HashSet<Measurement>> onlineScanList = FileHelper.getOnlineScans(params[0], LocatingActivity.this);
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
@@ -335,10 +340,12 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
                 ArrayList<String> stringToWrite = new ArrayList<>();
                 Integer contorLiveMM = 0;
                 HashSet<Measurement> combinedHashSet = new HashSet<>();
-                Position[] estimatedPos;
+                Position[] estimatedPos = null;
                 Measurement auxMeasurement;
+                Integer[] aux = {1,2,3,4,8};
 
-                for (degreeNo = 1; degreeNo < 4 ; degreeNo++) { //facut pentru a parcurge parametrii
+                for (int i = 0;i<aux.length;i++ ) { //facut pentru a parcurge parametrii
+                    degreeNo = aux[i];
                     Log.d("kNN","degreeNo: "+degreeNo);
                     //parcurgerea listei cu parametrii X
                     //iau si aplic algoritmul pe *liveMeasurments* din 10, astfel incat sa aplic pe aceleasi masuratori pentru parametrii diferiti
@@ -358,7 +365,11 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
 
                             publishProgress("Working: Calculating kNN");
-                            estimatedPos = Algorithms.kNN(combinedHashSet, params[0], myDb, degreeNo, k, trainingMeasurements, apSize);
+                            if(params[0].compareTo("Acasa")==0) {
+                                estimatedPos = Algorithms.kNN(combinedHashSet, params[0], myDb, degreeNo, k, trainingMeasurements, apSize);
+                            } else if (params[0].compareTo("crawDad")==0) {
+                                estimatedPos = Algorithms.kNN2(offlineScanSet,combinedHashSet,params[0], degreeNo, k, trainingMeasurements, apSize);
+                            }
                             publishProgress("Working: Getting next scan");
 
                             if (estimatedPos != null) {
@@ -373,7 +384,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
                                         ";trainingMeasurements=" + trainingMeasurements +
                                         ";apSize=" + apSize;
 
-                                s += ";estimatedPositions=" + estimatedPos[0] + ";" + estimatedPos[1];
+                                s += ";estimatedPositions=" + estimatedPos[0].CoordX+","+estimatedPos[0].CoordY + ";" + estimatedPos[1].CoordX+","+estimatedPos[1].CoordY;
 
                             /*
                             for (LinkedHashMap.Entry<Position, BigDecimal> entry : estimatedPos.entrySet()) {
@@ -405,7 +416,7 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
         }
         protected void onPostExecute(Void result) {
 
-            showMessage("","Finished!");
+            //showMessage("","Finished!");
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
     }
