@@ -495,21 +495,25 @@ public class FileHelper extends Thread{
             if(cluster == null){
                 cluster = "crawDadOnline";
             }
-            mMatcher = Pattern.compile("\\d*\\.\\d*,").matcher(line);
+            mMatcher = Pattern.compile("pos=-?\\d*\\.\\d*,-?\\d*\\.\\d*").matcher(line);
             coordx = null;
+            coordy = null;
             if (mMatcher.find()) {
                 aux = mMatcher.group();
-                aux = aux.substring(0, aux.length() - 1);
-                coordx = Double.parseDouble(aux);
+                aux = aux.substring(4, aux.length());
+                String[] parts = aux.split(",");
+                coordx = Double.parseDouble(parts[0]);
+                coordy = Double.parseDouble(parts[1]);
             }
 
-            coordy = null;
-            mMatcher = Pattern.compile(",\\d*\\.\\d*").matcher(line);
+            /*
+
+            mMatcher = Pattern.compile(",-?\\d*\\.\\d*;").matcher(line);
             if (mMatcher.find()) {
                 aux = mMatcher.group();
-                aux = aux.substring(1, aux.length());
+                aux = aux.substring(1, aux.length()-1);
                 coordy = Double.parseDouble(aux);
-            }
+            }*/
 
             mMatcher = Pattern.compile("degree=-?\\d{1,3}").matcher(line);
             orientation=null;

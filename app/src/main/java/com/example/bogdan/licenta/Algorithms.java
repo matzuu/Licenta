@@ -204,7 +204,7 @@ public class Algorithms {
         return retArr;
     }
 
-    public static Position[] kNN2(HashSet<Measurement> offlineMeasurementSet,HashSet<Measurement> liveMeasurementsSet, String cluster, Integer degreeNo, Integer k, Integer trainingMeasurements, Integer apSize){
+    public static Position[] kNN2(HashSet<Measurement> offlineMeasurementSet,HashSet<Measurement> liveMeasurementsSet, String cluster, Integer degreeNo, Integer k, Integer trainingScans, Integer apSize){
 
         if (liveMeasurementsSet.size() < 1){
             return null;
@@ -216,15 +216,37 @@ public class Algorithms {
         List<Measurement> measurementList = new ArrayList<>();
         Integer orientation = null;
 
-        HashSet<String> macAddressSet = new HashSet<>();
+
         //imi iau toaate BSSID-urile din Measurment-ul facut recent.
-
-        for (Measurement measurement : liveMeasurementsSet) {
-            macAddressSet.add(measurement.BSSID);
-            macAddressFrecvMap.put(measurement.BSSID,0);
-            orientation= measurement.ref_Orientation;
+        List<String> subMacs = new ArrayList<>();
+        /*switch(apSize){
+            case 6: subMacs.add("00:0f:a3:39:e1:c0");
+            case 5: subMacs.add("00:14:bf:3b:c7:c6");
+            case 4: subMacs.add("00:14:bf:b1:97:81");
+            case 3: subMacs.add("00:14:bf:b1:97:8a");
+            case 2: subMacs.add("00:14:bf:b1:97:8d");
+            case 1: subMacs.add("00:14:bf:b1:97:90");
+                    break;
+            default: break;
         }
+        */
+        Integer contorAp = 0;
+        for (Measurement measurement : liveMeasurementsSet) {
+            if (subMacs.contains(measurement.BSSID)) {
+                if(measurement.ref_CoordX!=null && measurement.ref_CoordY!=null && measurement.ref_Orientation != null) {
+                    macAddressFrecvMap.put(measurement.BSSID, 0);
+                    orientation = measurement.ref_Orientation;
+                }
+            } else if (contorAp < apSize) {
+                if(measurement.ref_CoordX!=null && measurement.ref_CoordY!=null && measurement.ref_Orientation != null) {
+                    subMacs.add(measurement.BSSID);
+                    macAddressFrecvMap.put(measurement.BSSID, 0);
+                    orientation = measurement.ref_Orientation;
+                }
 
+            }
+        }
+        Log.d("ALG","Orientation: "+orientation);
         //Log.d("ALG","mm orientation: "+orientation);
 
 
@@ -249,7 +271,7 @@ public class Algorithms {
                         }
 
                         if(macAddressFrecvMap.containsKey(m.BSSID))
-                            if(macAddressFrecvMap.get(m.BSSID)<trainingMeasurements){
+                            if(macAddressFrecvMap.get(m.BSSID)<trainingScans){
                                 measurementList.add(m);
                                 macAddressFrecvMap.put(m.BSSID,macAddressFrecvMap.get(m.BSSID)+1);
                             }
