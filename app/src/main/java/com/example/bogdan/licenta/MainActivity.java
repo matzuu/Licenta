@@ -2,6 +2,7 @@ package com.example.bogdan.licenta;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -26,6 +27,9 @@ public class MainActivity extends AppCompatActivity {
     Button btnLocatingActivity;
     Button btnDelete;
 
+    private SectionsStatePagerAdapter mSectionsStatePagerAdapter;
+    private ViewPager mViewPager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +47,12 @@ public class MainActivity extends AppCompatActivity {
         btnRegisterActivity = (Button) findViewById(R.id.button_toRegisterActivity);
         btnLocatingActivity = (Button) findViewById(R.id.button_toLocatingActivity);
 
+        mSectionsStatePagerAdapter = new SectionsStatePagerAdapter(getSupportFragmentManager());
+
+        mViewPager = (ViewPager) findViewById(R.id.containerFrag);
+        //setup the pager
+        setupViewPager(mViewPager);
+
 
         viewAllPosFromCluster();
         ReadingThread();
@@ -54,6 +64,17 @@ public class MainActivity extends AppCompatActivity {
         toLocatingActivity();
 
 
+    }
+
+    private void setupViewPager(ViewPager viewPager){
+        SectionsStatePagerAdapter adapter = new SectionsStatePagerAdapter(getSupportFragmentManager());
+        adapter.addFragment(new FragmentSearch(), "FragmentSearch");
+        adapter.addFragment(new FragmentMap(), "FragmentMap");
+        viewPager.setAdapter(adapter);
+    }
+
+    public void setViewPager(int fragmentNumber){
+        mViewPager.setCurrentItem(fragmentNumber);
     }
 
     public void ReadingThread() {

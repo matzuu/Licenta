@@ -15,6 +15,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="View All"
+        android:visibility="invisible"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -25,6 +26,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="SigStrVi"
+        android:visibility="invisible"
         app:layout_constraintStart_toEndOf="@+id/button_viewAll"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -34,15 +36,14 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="CountSig"
+        android:visibility="invisible"
         app:layout_constraintStart_toEndOf="@+id/button_SigStrView"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/button_toRegisterActivity"
-        android:layout_width="wrap_content"
+        android:layout_width="125dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
         android:text="Register Act"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -53,6 +54,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:text="Read"
+        android:visibility="invisible"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button_viewAll" />
 
@@ -61,15 +63,14 @@
         android:layout_width="90dp"
         android:layout_height="wrap_content"
         android:text="Write"
+        android:visibility="invisible"
         app:layout_constraintStart_toEndOf="@+id/button_read"
         app:layout_constraintTop_toBottomOf="@+id/button_SigStrView" />
 
     <Button
         android:id="@+id/button_toLocatingActivity"
-        android:layout_width="wrap_content"
+        android:layout_width="125dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginStart="8dp"
         android:text="Locating Act"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -79,6 +80,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Delete"
+        android:visibility="invisible"
         app:layout_constraintStart_toEndOf="@+id/button_write"
         app:layout_constraintTop_toBottomOf="@+id/button_CountSig" />
+
+    <android.support.v4.view.ViewPager
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/containerFrag">
+    </android.support.v4.view.ViewPager>
+
 </android.support.constraint.ConstraintLayout>
