@@ -25,6 +25,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //public static final String DATABASE_PATH= "data/data/com.example.bogdan.licenta/databases/";
     public static final String DATABASE_NAME = "SignalDB.db";
+    private static final int DATABASE_VERSION = 4;
     public static final String TABLE_POSITION = "position_table";
     public static final String COL_1 = "ID";
     public static final String COL_2 = "CoordX";
@@ -34,9 +35,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COL_6 = "Cluster";
     public static final String TABLE_MEASUREMENTS = "measurements_table";
     public static final String TABLE_ROUTER = "router_table";
+    public static final String TABLE_CLUSTER = "cluster_table";
 
     public DatabaseHelper(Context context) {
-        super(context, DATABASE_NAME, null, 1);
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     @Override
@@ -73,11 +75,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
-        if (oldVersion <2) {
-
+        if (oldVersion <4) {
             db.beginTransaction();
             try{
-
+                db.execSQL(" DROP TABLE cluster_table ");
                 db.execSQL("CREATE TABLE cluster_table ( clusterName TEXT , clusterType TEXT , clusterImage BLOB , PRIMARY KEY ( clusterName ) ) ");
 
                 db.execSQL(" CREATE TEMP TABLE position_table_backup (CoordX  REAL , CoordY  REAL, Level  INTEGER, Orientation  INTEGER,  Cluster  TEXT ," +
@@ -100,11 +101,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             {
                 db.endTransaction();
             }
-
-
         }
 
     }
+
+
+    //INSERT CLUSTER
+
+    public Long insertCluster(Cluster cl) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put("clusterName", cl.clusterName);
+        if (cl.clusterType != null )
+            if(!cl.clusterType.equals(""))
+                contentValues.put("clusterType", cl.clusterType);
+            else contentValues.put("clusterType", "Unspecified");
+        else contentValues.put("clusterType", "Unspecified");
+        long rowID = db.insertWithOnConflict(TABLE_CLUSTER, null, contentValues, CONFLICT_IGNORE);
+        return rowID;
+    }
+
 
     //INSERT POS
     public long insertPosData(Position pos) {
@@ -247,6 +263,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor res = db.query(TABLE_POSITION, tableColumns, whereClause, whereArgs, null, null, null);
+
+        return res;
+    }
+
+    public Cursor queryCluster(Cluster cl) {
+
+        String[] tableColumns = new String[]{
+                "rowid",
+                "clusterName"
+        };
+
+        String whereClause = "clusterName = ? ";
+        String[] whereArgs = new String[]{
+                cl.clusterName
+        };
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor res = db.query(TABLE_CLUSTER, tableColumns, whereClause, whereArgs, null, null, null);
+        Log.d("QUERY","Queried "+ res.getCount()+" clusters ");
 
         return res;
     }
@@ -493,6 +528,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.delete(TABLE_POSITION,"Cluster = ? ",whereArgs);
         return 1;
     }
+
+    public void populateClusterTable (String cluster) {
+
+
+
+    }
+
+
+
+
 }
 
 

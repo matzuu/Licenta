@@ -4,6 +4,7 @@ public class Cluster {
 
     public String clusterName;
     public String clusterType;
+    public byte[] imgMap;
 
     public Cluster (){
         clusterType = "default";
@@ -17,6 +18,12 @@ public class Cluster {
     public Cluster(String clusterName, String clusterType) {
         this.clusterName = clusterName;
         this.clusterType = clusterType;
+    }
+
+    public Cluster(String clusterName, String clusterType, byte[] imgMap) {
+        this.clusterName = clusterName;
+        this.clusterType = clusterType;
+        this.imgMap = imgMap;
     }
 
     public String getClusterName() {

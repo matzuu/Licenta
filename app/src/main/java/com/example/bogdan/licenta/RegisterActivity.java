@@ -45,13 +45,14 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
     Button btnStartScanning;
     Button btnDeletePos;
     Button btnViewMeasurements;
+    Button btnInsertCluster;
     TextView textViewCompass;
     TextView textViewCompass2;
     TextView textViewCompass3;
     TextView textWifiInfo;
     TextView textWifiNr;
     ImageView imgViewCompass;
-    EditText editCoordX, editCoordY,editOrientation,editCluster;
+    EditText editCoordX, editCoordY,editOrientation,editCluster,editClusterType;
 
     private SensorManager mSensorManager;
     Sensor mAccelerometer;
@@ -87,6 +88,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         btnMainActivity = (Button) findViewById(R.id.button_ToMainActivity);
         btnStartScanning = (Button) findViewById(R.id.button_startScanning);
         btnDeletePos = findViewById(R.id.button_deletePos);
+        btnInsertCluster = findViewById(R.id.button_insertCluster);
         btnViewMeasurements = findViewById(R.id.button_viewMeasurementsAtPos);
         textViewCompass = findViewById(R.id.textView_CompassDegrees);
         textViewCompass2 = findViewById(R.id.textView_CompassDegrees2);
@@ -98,6 +100,8 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         editCoordY = (EditText) findViewById(R.id.editText_CoordY);
         editOrientation = (EditText) findViewById(R.id.editText_Orientation);
         editCluster = (EditText) findViewById(R.id.editText_Cluster);
+        editClusterType = (EditText) findViewById(R.id.editText_ClType);
+
 
 
         //capturedDatabuffer = new StringBuffer();
@@ -145,6 +149,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         startWifiScan();
         toMainActivity();
         deletePos();
+        insertCluster();
         viewMeasurementsOfPos();
 
     }
@@ -240,12 +245,38 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                             checkPermissions();
                             if (finePermission == true) {
                                 nrOfScans = 0;
+
+                                Cluster cl = new Cluster(
+                                        editCluster.getText().toString(),
+                                        editClusterType.getText().toString());
+
+                                Long lastClID = myDb.insertCluster(cl);
+
+                                if (lastClID >= 0) {
+                                    Log.d("RegisterAct","Cluster Inserted: "+ cl.clusterName);
+                                } else {
+                                    Cursor res = myDb.queryCluster(cl);
+                                    if (res.getCount() == 0)
+                                        Toast.makeText(RegisterActivity.this, "Cluster not Inserted", Toast.LENGTH_LONG).show();
+
+                                    else {
+                                        Integer colIndex = res.getColumnIndex("rowid");
+                                        if (res.moveToFirst()) {
+                                            lastClID = (long) res.getInt(colIndex);
+                                            Toast.makeText(RegisterActivity.this, "Cluster already Inserted", Toast.LENGTH_LONG).show();
+                                        } else {
+                                            Toast.makeText(RegisterActivity.this, "Cluster not found", Toast.LENGTH_LONG).show();
+                                        }
+                                    }
+                                }
+
                                 lastPos = new Position(
                                         Double.parseDouble(editCoordX.getText().toString()),
                                         Double.parseDouble(editCoordY.getText().toString()),
                                         Integer.parseInt(editOrientation.getText().toString()),
                                         editCluster.getText().toString());
                                 Long lastPosID = myDb.insertPosData(lastPos);
+
 
                                 if (lastPosID >= 0) {
                                     Toast.makeText(RegisterActivity.this, "Position Inserted , lastId: " + lastPosID, Toast.LENGTH_LONG).show();
@@ -434,6 +465,47 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
             });
     }
 
+    public void insertCluster(){
+        btnInsertCluster.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (checkForIncompletedTextsCluster()) {
+                            Toast.makeText(RegisterActivity.this, "All Cluster fields must be completed", Toast.LENGTH_LONG).show();
+                            return;
+                        } else {
+
+                            Cluster cl = new Cluster(
+                                    editCluster.getText().toString(),
+                                    editClusterType.getText().toString());
+
+                            Long lastClID = myDb.insertCluster(cl);
+
+                            if (lastClID >= 0) {
+                                Log.d("RegisterAct","Cluster Inserted: "+ cl.clusterName);
+                            } else {
+                                Cursor res = myDb.queryCluster(cl);
+                                if (res.getCount() == 0)
+                                    Toast.makeText(RegisterActivity.this, "Cluster not Inserted", Toast.LENGTH_LONG).show();
+
+                                else {
+                                    Integer colIndex = res.getColumnIndex("rowid");
+                                    if (res.moveToFirst()) {
+                                        lastClID = (long) res.getInt(colIndex);
+                                        Toast.makeText(RegisterActivity.this, "Cluster already Inserted", Toast.LENGTH_LONG).show();
+                                    } else {
+                                        Toast.makeText(RegisterActivity.this, "Cluster not found", Toast.LENGTH_LONG).show();
+                                    }
+                                }
+                            }
+
+                            Toast.makeText(RegisterActivity.this, " Inserted Cluster ", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    }
+                });
+    }
+
     public void viewMeasurementsOfPos(){
         btnViewMeasurements.setOnClickListener(
             new View.OnClickListener() {
@@ -482,6 +554,14 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         boolean res = editCoordX.getText().toString() == null || editCoordY.getText().toString() == null || editOrientation.getText().toString() == null || editCluster.getText().toString() == null ||
                 editCoordX.getText().toString().compareTo("")==0 || editCoordY.getText().toString().compareTo("")==0 || editOrientation.getText().toString().compareTo("")==0 || editCluster.getText().toString().compareTo("")==0;
         Log.d("Register","checkForCompletedTexts result: "+res);
+        return res;
+    }
+
+    public boolean checkForIncompletedTextsCluster (){
+
+        boolean res =  editCluster.getText().toString() == null || editClusterType.getText().toString() == null ||
+                 editCluster.getText().toString().compareTo("")==0 || editClusterType.getText().toString().compareTo("")==0;
+
         return res;
     }
 
