@@ -72,8 +72,38 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_POSITION);
-        onCreate(db);
+
+        if (oldVersion <2) {
+
+            db.beginTransaction();
+            try{
+
+                db.execSQL("CREATE TABLE cluster_table ( clusterName TEXT , clusterType TEXT , clusterImage BLOB , PRIMARY KEY ( clusterName ) ) ");
+
+                db.execSQL(" CREATE TEMP TABLE position_table_backup (CoordX  REAL , CoordY  REAL, Level  INTEGER, Orientation  INTEGER,  Cluster  TEXT ," +
+                        " PRIMARY KEY ( CoordX, CoordY ,Orientation, Cluster ))" );
+
+                db.execSQL(" INSERT INTO position_table_backup SELECT * FROM position_table ");
+                db.execSQL(" DROP TABLE position_table ");
+                db.execSQL(" CREATE TABLE position_table (CoordX  REAL , CoordY  REAL, Level  INTEGER, Orientation  INTEGER,  Cluster  TEXT ," +
+                        " PRIMARY KEY ( CoordX, CoordY ,Orientation, Cluster ) , " +
+                        " FOREIGN KEY ( Cluster ) REFERENCES cluster_table( clusterName ) ) ");
+                db.execSQL(" INSERT INTO position_table SELECT * FROM position_table_backup ");
+                db.execSQL(" DROP TABLE position_table_backup");
+
+
+                db.setTransactionSuccessful();
+            } catch (Exception e) {
+                Log.d("Update","EXCEPTION WHEN UPDATING: "+ e);
+            }
+            finally
+            {
+                db.endTransaction();
+            }
+
+
+        }
+
     }
 
     //INSERT POS
