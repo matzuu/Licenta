@@ -4,7 +4,27 @@ public class Cluster {
 
     public String clusterName;
     public String clusterType;
-    public byte[] imgMap;
+    public int clusterImageUrl;
+    public int startPixX;
+    public int startPixY;
+    public Double distancePx;
+
+    public Cluster(String clusterName, String clusterType, int clusterImageUrl, int startPixX, int startPixY, Double distancePx) {
+        this.clusterName = clusterName;
+        this.clusterType = clusterType;
+        this.clusterImageUrl = clusterImageUrl;
+        this.startPixX = startPixX;
+        this.startPixY = startPixY;
+        this.distancePx = distancePx;
+    }
+
+    public Cluster(String clusterName, String clusterType, int startPixX, int startPixY, Double distancePx) {
+        this.clusterName = clusterName;
+        this.clusterType = clusterType;
+        this.startPixX = startPixX;
+        this.startPixY = startPixY;
+        this.distancePx = distancePx;
+    }
 
     public Cluster (){
         clusterType = "default";
@@ -18,12 +38,6 @@ public class Cluster {
     public Cluster(String clusterName, String clusterType) {
         this.clusterName = clusterName;
         this.clusterType = clusterType;
-    }
-
-    public Cluster(String clusterName, String clusterType, byte[] imgMap) {
-        this.clusterName = clusterName;
-        this.clusterType = clusterType;
-        this.imgMap = imgMap;
     }
 
     public String getClusterName() {

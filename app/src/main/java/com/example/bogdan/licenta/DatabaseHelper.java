@@ -8,14 +8,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
-import static java.sql.DriverManager.println;
 
 /**
  * Created by Bogdan on 27-Jun-18.
@@ -25,7 +20,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //public static final String DATABASE_PATH= "data/data/com.example.bogdan.licenta/databases/";
     public static final String DATABASE_NAME = "SignalDB.db";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 6;
     public static final String TABLE_POSITION = "position_table";
     public static final String COL_1 = "ID";
     public static final String COL_2 = "CoordX";
@@ -75,6 +70,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
+        /*
         if (oldVersion <4) {
             db.beginTransaction();
             try{
@@ -101,7 +97,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             {
                 db.endTransaction();
             }
+        }*/
+
+        if (oldVersion <6) {
+            Log.d("UPDATE","Trying to update to version 6");
+            db.beginTransaction();
+            try{
+                db.execSQL(" DROP TABLE cluster_table ");
+                db.execSQL("CREATE TABLE cluster_table ( clusterName TEXT , clusterType TEXT , clusterImageUrl TEXT , startPixX INTEGER , startPixY INTEGER , distancePx REAL , PRIMARY KEY ( clusterName ) ) ");
+
+                db.setTransactionSuccessful();
+            } catch (Exception e) {
+                Log.d("Update","EXCEPTION WHEN UPDATING: "+ e);
+            }
+            finally
+            {
+                db.endTransaction();
+            }
+
         }
+        Log.d("UPDATE","DB UPDATED TO VERSION: "+DATABASE_VERSION);
 
     }
 
@@ -117,6 +132,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 contentValues.put("clusterType", cl.clusterType);
             else contentValues.put("clusterType", "Unspecified");
         else contentValues.put("clusterType", "Unspecified");
+        contentValues.put("clusterImageUrl", cl.clusterImageUrl);
+        contentValues.put("startPixX", cl.startPixX);
+        contentValues.put("startPixY", cl.startPixY);
+        if (cl.distancePx != null)
+            contentValues.put("distancePx", cl.distancePx);
+        else contentValues.put("distancePx", Double.valueOf(0));
+
         long rowID = db.insertWithOnConflict(TABLE_CLUSTER, null, contentValues, CONFLICT_IGNORE);
         return rowID;
     }
@@ -267,7 +289,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return res;
     }
 
-    public Cursor queryCluster(Cluster cl) {
+    public Cursor queryClusterName(Cluster cl) {
 
         String[] tableColumns = new String[]{
                 "rowid",
@@ -285,6 +307,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return res;
     }
+
+    public Cursor queryCluster(Cluster cl) {
+
+        String[] tableColumns = new String[]{
+                "rowid",
+                "clusterName",
+                "clusterType",
+                "clusterImageUrl",
+                "startPixX",
+                "startPixY",
+                "distancePx"
+        };
+
+        String whereClause = "clusterName = ? ";
+        String[] whereArgs = new String[]{
+                cl.clusterName
+        };
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor res = db.query(TABLE_CLUSTER, tableColumns, whereClause, whereArgs, null, null, null);
+        Log.d("QUERY","Queried "+ res.getCount()+" clusters ");
+
+        return res;
+    }
+
 
 
     public Cursor queryPosition(Position p) {
@@ -534,6 +581,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 
     }
+
 
 
 

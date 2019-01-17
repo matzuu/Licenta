@@ -9,22 +9,23 @@
     <EditText
         android:id="@+id/editText_ClType"
         android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="16dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginTop="8dp"
         android:ems="10"
         android:inputType="textPersonName"
-        app:layout_constraintBottom_toTopOf="@+id/button_deletePos"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:textSize="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editText_Cluster" />
 
     <TextView
         android:id="@+id/textView_CompassDegrees"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
-        android:layout_marginTop="60dp"
+        android:layout_marginTop="8dp"
         android:text="Azimuth: N/A"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/imageView_Compass"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
@@ -39,10 +40,10 @@
     <TextView
         android:id="@+id/textView_CompassDegrees2"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="15dp"
         android:layout_marginEnd="8dp"
         android:text="Pitch: N/A"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/imageView_Compass"
         app:layout_constraintTop_toBottomOf="@+id/textView_CompassDegrees" />
 
     <TextView
@@ -51,7 +52,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:text="Roll: N/A"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/imageView_Compass"
         app:layout_constraintTop_toBottomOf="@+id/textView_CompassDegrees2" />
 
     <ImageView
@@ -96,115 +97,119 @@
     <TextView
         android:id="@+id/textViewCoordX"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="32dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
-        android:layout_marginBottom="20dp"
         android:layout_marginEnd="72dp"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="12dp"
         android:text="CoordX"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        app:layout_constraintBottom_toTopOf="@+id/textViewCoordY"
         app:layout_constraintEnd_toStartOf="@+id/editText_CoordX"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_wifiNr" />
 
     <TextView
         android:id="@+id/textViewCoordY"
         android:layout_width="92dp"
-        android:layout_height="wrap_content"
+        android:layout_height="32dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_below="@+id/editText_CoordX"
-        android:layout_marginBottom="20dp"
         android:layout_marginEnd="40dp"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
         android:text="CoordY"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        app:layout_constraintBottom_toTopOf="@+id/textViewOrientation"
         app:layout_constraintEnd_toStartOf="@+id/editText_CoordY"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewCoordX" />
 
     <EditText
         android:id="@+id/editText_CoordX"
         android:layout_width="200dp"
-        android:layout_height="wrap_content"
+        android:layout_height="32dp"
         android:layout_alignTop="@+id/textViewCoordX"
-        android:layout_marginBottom="4dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginTop="8dp"
         android:layout_toEndOf="@+id/textViewCoordX"
         android:layout_toRightOf="@+id/textViewCoordX"
         android:inputType="numberSigned|numberDecimal"
-        app:layout_constraintBottom_toTopOf="@+id/editText_CoordY"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:textSize="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_wifiNr" />
 
     <EditText
         android:id="@+id/editText_CoordY"
         android:layout_width="200dp"
-        android:layout_height="wrap_content"
+        android:layout_height="32dp"
         android:layout_alignTop="@+id/textViewCoordY"
-        android:layout_marginBottom="4dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginTop="8dp"
         android:layout_toEndOf="@+id/textViewCoordY"
         android:layout_toRightOf="@+id/textViewCoordY"
         android:inputType="numberSigned|numberDecimal"
-        app:layout_constraintBottom_toTopOf="@+id/editText_Orientation"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:textSize="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editText_CoordX" />
 
     <TextView
         android:id="@+id/textViewOrientation"
         android:layout_width="wrap_content"
-        android:layout_height="28dp"
-        android:layout_marginBottom="20dp"
+        android:layout_height="32dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
         android:text="Orientare"
         android:textAppearance="@android:style/TextAppearance.Material.Large"
-        app:layout_constraintBottom_toTopOf="@+id/textViewCluster"
         app:layout_constraintEnd_toStartOf="@+id/editText_Orientation"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewCoordY"
         tools:text="Orientare" />
 
     <TextView
         android:id="@+id/textViewCluster"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
+        android:layout_height="32dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
         android:text="Cluster"
         android:textAppearance="@android:style/TextAppearance.Material.Large"
-        app:layout_constraintBottom_toTopOf="@+id/textViewClusterType"
         app:layout_constraintEnd_toStartOf="@+id/editText_Cluster"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewOrientation" />
 
     <EditText
         android:id="@+id/editText_Orientation"
         android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="4dp"
-        android:layout_marginEnd="16dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginTop="8dp"
         android:ems="10"
         android:inputType="number"
         android:text="0"
-        app:layout_constraintBottom_toTopOf="@+id/editText_Cluster"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:textSize="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editText_CoordY" />
 
     <EditText
         android:id="@+id/editText_Cluster"
         android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="4dp"
-        android:layout_marginEnd="16dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginTop="8dp"
         android:ems="10"
         android:inputType="textPersonName"
         android:text="Acasa"
-        app:layout_constraintBottom_toTopOf="@+id/editText_ClType"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:textSize="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editText_Orientation" />
 
     <Button
         android:id="@+id/button_deletePos"
@@ -230,23 +235,38 @@
     <TextView
         android:id="@+id/textViewClusterType"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
         android:text="Cl Type"
         android:textAppearance="@android:style/TextAppearance.Material.Large"
-        app:layout_constraintBottom_toTopOf="@+id/button_deletePos"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintEnd_toStartOf="@+id/editText_ClType"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewCluster" />
 
     <Button
         android:id="@+id/button_insertCluster"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:text="Insert Cluster"
         app:layout_constraintBottom_toTopOf="@+id/button_viewMeasurementsAtPos"
+        app:layout_constraintEnd_toStartOf="@+id/button_populateCluster"
         app:layout_constraintStart_toEndOf="@+id/button_deletePos" />
+
+    <Button
+        android:id="@+id/button_populateCluster"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="4dp"
+        android:text="Pop CL"
+        app:layout_constraintBottom_toTopOf="@+id/button_ToMainActivity"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 
 </android.support.constraint.ConstraintLayout>

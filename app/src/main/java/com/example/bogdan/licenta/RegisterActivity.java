@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -32,9 +33,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
 import java.net.NetworkInterface;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +47,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
     Button btnDeletePos;
     Button btnViewMeasurements;
     Button btnInsertCluster;
+    Button btnPopulateCluster;
     TextView textViewCompass;
     TextView textViewCompass2;
     TextView textViewCompass3;
@@ -90,6 +92,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         btnDeletePos = findViewById(R.id.button_deletePos);
         btnInsertCluster = findViewById(R.id.button_insertCluster);
         btnViewMeasurements = findViewById(R.id.button_viewMeasurementsAtPos);
+        btnPopulateCluster = findViewById(R.id.button_populateCluster);
         textViewCompass = findViewById(R.id.textView_CompassDegrees);
         textViewCompass2 = findViewById(R.id.textView_CompassDegrees2);
         textViewCompass3 = findViewById(R.id.textView_CompassDegrees3);
@@ -101,6 +104,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         editOrientation = (EditText) findViewById(R.id.editText_Orientation);
         editCluster = (EditText) findViewById(R.id.editText_Cluster);
         editClusterType = (EditText) findViewById(R.id.editText_ClType);
+
 
 
 
@@ -150,6 +154,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         toMainActivity();
         deletePos();
         insertCluster();
+        populateCluster();
         viewMeasurementsOfPos();
 
     }
@@ -255,7 +260,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                                 if (lastClID >= 0) {
                                     Log.d("RegisterAct","Cluster Inserted: "+ cl.clusterName);
                                 } else {
-                                    Cursor res = myDb.queryCluster(cl);
+                                    Cursor res = myDb.queryClusterName(cl);
                                     if (res.getCount() == 0)
                                         Toast.makeText(RegisterActivity.this, "Cluster not Inserted", Toast.LENGTH_LONG).show();
 
@@ -484,7 +489,7 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
                             if (lastClID >= 0) {
                                 Log.d("RegisterAct","Cluster Inserted: "+ cl.clusterName);
                             } else {
-                                Cursor res = myDb.queryCluster(cl);
+                                Cursor res = myDb.queryClusterName(cl);
                                 if (res.getCount() == 0)
                                     Toast.makeText(RegisterActivity.this, "Cluster not Inserted", Toast.LENGTH_LONG).show();
 
@@ -564,6 +569,49 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
 
         return res;
     }
+
+    public void populateCluster(){
+        btnPopulateCluster.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                        //TODO REFACUT TABELUL CLUSTER drop si refacut
+
+
+                        Cluster cl_1 = new Cluster("Acasa","Home",R.drawable.map_acasa,453,267,90.0);
+                        Cluster cl_2 = new Cluster("crawDad","School",R.drawable.map_crawDad,16,37,20.5);
+                        Cluster cl_3 = new Cluster("First","Museum");
+                        Cluster cl_4 = new Cluster("Second","Shopping");
+                        Cluster cl_5 = new Cluster( "Third","Shopping");
+                        Cluster cl_6 = new Cluster("Fourth","asdf");
+                        Cluster cl_7 = new Cluster("Fifth","asdf");
+                        Cluster cl_8 = new Cluster("Test","asdf");
+
+                        Log.d("MISC","Before Inserted Pop Clusters");
+
+                        myDb.insertCluster(cl_1);
+                        myDb.insertCluster(cl_2);
+                        myDb.insertCluster(cl_3);
+                        myDb.insertCluster(cl_4);
+                        myDb.insertCluster(cl_5);
+                        myDb.insertCluster(cl_6);
+                        myDb.insertCluster(cl_7);
+                        myDb.insertCluster(cl_8);
+
+                        Log.d("MISC","Inserted Pop Clusters");
+
+
+
+
+                    }
+                }
+        );
+    }
+
+
+
+
 
 
     public void showMessage(String title, String Message) {
