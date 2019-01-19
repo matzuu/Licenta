@@ -22,6 +22,11 @@ public class FragmentMap extends Fragment {
         View view  = inflater.inflate(R.layout.fragment_map, container, false);
         btnNavFragSearch = (Button) view.findViewById(R.id.btnNavFragSearch);
         Log.d(TAG, "onCreateView FragS: started.");
+        //String value = getArguments().getString("Key");
+
+        //Log.d("FRAGMENTMAP","Am primit: "+value);
+
+
 
         btnNavFragSearch.setOnClickListener(new View.OnClickListener() {
             @Override

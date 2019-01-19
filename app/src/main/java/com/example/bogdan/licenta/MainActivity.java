@@ -1,7 +1,9 @@
 package com.example.bogdan.licenta;
 
+import android.app.Fragment;
 import android.content.Intent;
 import android.database.Cursor;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -76,6 +78,8 @@ public class MainActivity extends AppCompatActivity {
     public void setViewPager(int fragmentNumber){
         mViewPager.setCurrentItem(fragmentNumber);
     }
+
+
 
     public void ReadingThread() {
         btnRead.setOnClickListener(

@@ -8,8 +8,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -18,6 +21,13 @@ public class FragmentSearch extends Fragment {
 
     private Button btnNavFragMap;
     private Button btnNavSecondActivity;
+
+    ArrayList<Cluster> clusterArrayList = new ArrayList<>();
+
+
+
+
+
 
 
     @Nullable
@@ -45,7 +55,7 @@ public class FragmentSearch extends Fragment {
         Cluster c4 = new Cluster("test4", "Shopping");
         Cluster c5 = new Cluster("test5", "School");
 
-        ArrayList<Cluster> clusterArrayList = new ArrayList<>();
+
         clusterArrayList.add(c1);
         clusterArrayList.add(c2);
         clusterArrayList.add(c3);
@@ -64,6 +74,32 @@ public class FragmentSearch extends Fragment {
 
         ClusterListAdapter adapter = new ClusterListAdapter(getActivity(),R.layout.adapter_view_layout,clusterArrayList);
         mListView.setAdapter(adapter);
+
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Log.d("Listview", "onItemClick: name: " + clusterArrayList);
+                Toast.makeText((MainActivity)getActivity(), "You clicked on: " + clusterArrayList.get(i).clusterName,Toast.LENGTH_LONG).show();
+
+                /*
+                //Put the value
+                FragmentMap ldf = new FragmentMap();
+                Bundle args = new Bundle();
+                args.putString("Key", clusterArrayList.get(i).clusterName);
+                ldf.setArguments(args);
+
+                //Inflate the fragment
+                getFragmentManager().beginTransaction().add(R.id.containerFrag, ldf).commit();
+                */
+
+
+                ((MainActivity)getActivity()).setViewPager(1);
+
+
+
+                //TODO sa schimb harta din FragmentMap;
+            }
+        });
 
 
         return view;

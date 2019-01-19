@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Licenta</string>
+
+    <!-- fragment tags -->
+    <string name="fragment_a">Fragment A</string>
+    <string name="fragment_selector">Fragment Selector</string>
+
+    <!-- intent keys -->
+    <string name="intent_message">intent_message</string>
+
 </resources>

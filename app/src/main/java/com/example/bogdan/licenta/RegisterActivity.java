@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -33,7 +32,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.ByteArrayOutputStream;
 import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,6 +53,8 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
     TextView textWifiNr;
     ImageView imgViewCompass;
     EditText editCoordX, editCoordY,editOrientation,editCluster,editClusterType;
+
+    Cluster clusterAux;
 
     private SensorManager mSensorManager;
     Sensor mAccelerometer;
@@ -578,9 +578,11 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
 
                         //TODO REFACUT TABELUL CLUSTER drop si refacut
 
+                        myDb.deleteClusters();
+
 
                         Cluster cl_1 = new Cluster("Acasa","Home",R.drawable.map_acasa,453,267,90.0);
-                        Cluster cl_2 = new Cluster("crawDad","School",R.drawable.map_crawDad,16,37,20.5);
+                        Cluster cl_2 = new Cluster("crawDad","School",R.drawable.map_crawdad,16,37,20.5);
                         Cluster cl_3 = new Cluster("First","Museum");
                         Cluster cl_4 = new Cluster("Second","Shopping");
                         Cluster cl_5 = new Cluster( "Third","Shopping");

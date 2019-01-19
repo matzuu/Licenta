@@ -120,7 +120,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     }
 
-
     //INSERT CLUSTER
 
     public Long insertCluster(Cluster cl) {
@@ -576,9 +575,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return 1;
     }
 
-    public void populateClusterTable (String cluster) {
 
 
+    public void deleteClusters(){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.beginTransaction();
+        try{
+            db.execSQL(" DROP TABLE cluster_table ");
+            db.execSQL("CREATE TABLE cluster_table ( clusterName TEXT , clusterType TEXT , clusterImageUrl TEXT , startPixX INTEGER , startPixY INTEGER , distancePx REAL , PRIMARY KEY ( clusterName ) ) ");
+
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+            Log.d("Update","EXCEPTION WHEN UPDATING: "+ e);
+        }
+        finally
+        {
+            db.endTransaction();
+        }
 
     }
 
