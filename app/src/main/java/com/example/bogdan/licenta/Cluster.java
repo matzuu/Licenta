@@ -4,12 +4,12 @@ public class Cluster {
 
     public String clusterName;
     public String clusterType;
-    public int clusterImageUrl;
+    public String clusterImageUrl;
     public int startPixX;
     public int startPixY;
     public Double distancePx;
 
-    public Cluster(String clusterName, String clusterType, int clusterImageUrl, int startPixX, int startPixY, Double distancePx) {
+    public Cluster(String clusterName, String clusterType, String clusterImageUrl, int startPixX, int startPixY, Double distancePx) {
         this.clusterName = clusterName;
         this.clusterType = clusterType;
         this.clusterImageUrl = clusterImageUrl;

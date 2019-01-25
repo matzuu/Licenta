@@ -331,7 +331,54 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return res;
     }
 
+    public Cursor queryCluster(String cl) {
 
+        String[] tableColumns = new String[]{
+                "rowid",
+                "clusterName",
+                "clusterType",
+                "clusterImageUrl",
+                "startPixX",
+                "startPixY",
+                "distancePx"
+        };
+
+        String whereClause = "clusterName = ? ";
+        String[] whereArgs = new String[]{
+                cl
+        };
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor res = db.query(TABLE_CLUSTER, tableColumns, whereClause, whereArgs, null, null, null);
+        Log.d("QUERY","Queried "+ res.getCount()+" clusters ");
+
+        return res;
+    }
+
+    public Cursor queryClustersCriteria(String s) {
+
+        String[] tableColumns = new String[]{
+                "rowid",
+                "clusterName",
+                "clusterType",
+                "clusterImageUrl",
+                "startPixX",
+                "startPixY",
+                "distancePx"
+        };
+
+        String whereClause = "clusterName LIKE ? ";
+        String[] whereArgs = new String[]{
+                "%"+s+"%"
+        };
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor res = db.query(TABLE_CLUSTER, tableColumns, whereClause, whereArgs, null, null, null);
+        Log.d("QUERY","Queried "+ res.getCount()+" clusters ");
+
+
+        return res;
+    }
 
     public Cursor queryPosition(Position p) {
 

@@ -84,9 +84,11 @@
         app:layout_constraintStart_toEndOf="@+id/button_write"
         app:layout_constraintTop_toBottomOf="@+id/button_CountSig" />
 
-    <android.support.v4.view.ViewPager
-        android:id="@+id/containerFrag"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"></android.support.v4.view.ViewPager>
+        android:layout_height="match_parent"
+        android:id="@+id/main_container">
+
+    </FrameLayout>
 
 </android.support.constraint.ConstraintLayout>

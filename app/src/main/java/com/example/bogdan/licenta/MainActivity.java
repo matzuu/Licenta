@@ -17,7 +17,7 @@ import java.util.List;
 
 import static com.example.bogdan.licenta.DatabaseHelper.TABLE_MEASUREMENTS;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements  IMainActivity{
     DatabaseHelper myDb;
 
     Button btnViewAllPosFromCluster;
@@ -29,8 +29,8 @@ public class MainActivity extends AppCompatActivity {
     Button btnLocatingActivity;
     Button btnDelete;
 
-    private SectionsStatePagerAdapter mSectionsStatePagerAdapter;
-    private ViewPager mViewPager;
+    //private SectionsStatePagerAdapter mSectionsStatePagerAdapter;
+    //private ViewPager mViewPager;
 
 
     @Override
@@ -49,12 +49,13 @@ public class MainActivity extends AppCompatActivity {
         btnRegisterActivity = (Button) findViewById(R.id.button_toRegisterActivity);
         btnLocatingActivity = (Button) findViewById(R.id.button_toLocatingActivity);
 
-        mSectionsStatePagerAdapter = new SectionsStatePagerAdapter(getSupportFragmentManager());
+        //mSectionsStatePagerAdapter = new SectionsStatePagerAdapter(getSupportFragmentManager());
 
-        mViewPager = (ViewPager) findViewById(R.id.containerFrag);
+        //mViewPager = (ViewPager) findViewById(R.id.containerFrag);
         //setup the pager
-        setupViewPager(mViewPager);
-
+        //setupViewPager(mViewPager);]
+        Log.d("testingMain","INIT()");
+        init();
 
         viewAllPosFromCluster();
         ReadingThread();
@@ -66,8 +67,11 @@ public class MainActivity extends AppCompatActivity {
         toLocatingActivity();
 
 
+
+
     }
 
+    /*
     private void setupViewPager(ViewPager viewPager){
         SectionsStatePagerAdapter adapter = new SectionsStatePagerAdapter(getSupportFragmentManager());
         adapter.addFragment(new FragmentSearch(), "FragmentSearch");
@@ -78,6 +82,9 @@ public class MainActivity extends AppCompatActivity {
     public void setViewPager(int fragmentNumber){
         mViewPager.setCurrentItem(fragmentNumber);
     }
+    */
+
+
 
 
 
@@ -281,6 +288,43 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void init(){
+        Log.d("testingMain","INIT()");
+        FragmentSearch fragment = new FragmentSearch();
+        doFragmentTransaction(fragment, getString(R.string.fragment_search),false,"");
+    }
+
+    private void doFragmentTransaction(android.support.v4.app.Fragment fragment, String tag, boolean addToBackStack, String message){
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+
+
+        if(!message.equals("")){
+            Bundle bundle = new Bundle();
+            bundle.putString(getString(R.string.intent_message), message);
+            fragment.setArguments(bundle);
+        }
+
+
+        transaction.replace(R.id.main_container, fragment, tag);
+
+        if(addToBackStack){
+            transaction.addToBackStack(tag);
+        }
+        transaction.commit();
+    }
+
+
+    @Override
+    public void inflateFragment(String fragmentTag, String message) {
+        if(fragmentTag.equals(getString(R.string.fragment_search))){
+            FragmentSearch fragment = new FragmentSearch();
+            doFragmentTransaction(fragment, fragmentTag, true, message);
+        }
+        else if(fragmentTag.equals(getString(R.string.fragment_map))){
+            FragmentMap fragment = new FragmentMap();
+            doFragmentTransaction(fragment, fragmentTag, true, message);
+        }
+    }
 
 }
 
