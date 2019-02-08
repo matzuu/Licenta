@@ -314,8 +314,8 @@ public class LocatingActivity extends AppCompatActivity implements SensorEventLi
 
             Integer k = 5; //don: default 5
             Integer degreeNo = 4; //don: default 4
-            Integer liveScans = 5; //don: default 3
-            Integer trainingScans = 50; //don default 20
+            Integer liveScans = 3; //don: default 3
+            Integer trainingScans = 20; //don default 20
             Integer apSize = 6; //default 6
             Integer degree; //don
             //degree = Algorithms.radiansToRounded90Degrees(mOrientation[0]);

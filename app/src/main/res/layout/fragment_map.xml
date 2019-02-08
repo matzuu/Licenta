@@ -22,11 +22,12 @@
 
     <ImageView
         android:id="@+id/imageView_map"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
-        app:srcCompat="@android:drawable/ic_menu_help"
-        tools:layout_editor_absoluteX="30dp"
-        tools:layout_editor_absoluteY="105dp" />
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerInside"
+        android:src="@drawable/questionmark" />
+
+
 
 
 </android.support.constraint.ConstraintLayout>

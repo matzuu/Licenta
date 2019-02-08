@@ -611,11 +611,6 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         );
     }
 
-
-
-
-
-
     public void showMessage(String title, String Message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setCancelable(true);
@@ -623,7 +618,6 @@ public class RegisterActivity extends AppCompatActivity implements SensorEventLi
         builder.setMessage(Message);
         builder.show();
     }
-
 
     private void toMainActivity(){
 

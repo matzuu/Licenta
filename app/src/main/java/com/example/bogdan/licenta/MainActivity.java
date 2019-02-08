@@ -71,23 +71,6 @@ public class MainActivity extends AppCompatActivity implements  IMainActivity{
 
     }
 
-    /*
-    private void setupViewPager(ViewPager viewPager){
-        SectionsStatePagerAdapter adapter = new SectionsStatePagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new FragmentSearch(), "FragmentSearch");
-        adapter.addFragment(new FragmentMap(), "FragmentMap");
-        viewPager.setAdapter(adapter);
-    }
-
-    public void setViewPager(int fragmentNumber){
-        mViewPager.setCurrentItem(fragmentNumber);
-    }
-    */
-
-
-
-
-
     public void ReadingThread() {
         btnRead.setOnClickListener(
             new View.OnClickListener() {
@@ -313,7 +296,6 @@ public class MainActivity extends AppCompatActivity implements  IMainActivity{
         transaction.commit();
     }
 
-
     @Override
     public void inflateFragment(String fragmentTag, String message) {
         if(fragmentTag.equals(getString(R.string.fragment_search))){
@@ -325,6 +307,8 @@ public class MainActivity extends AppCompatActivity implements  IMainActivity{
             doFragmentTransaction(fragment, fragmentTag, true, message);
         }
     }
+
+
 
 }
 
